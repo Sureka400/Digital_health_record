@@ -7,21 +7,24 @@ import { AIAssistantTab } from '@/app/components/patient/AIAssistantTab';
 import { AppointmentsTab } from '@/app/components/patient/AppointmentsTab';
 import { SchemesTab } from '@/app/components/patient/SchemesTab';
 import { EmergencyTab } from '@/app/components/patient/EmergencyTab';
+import { useTranslation } from '@/app/utils/translations';
 
 interface PatientDashboardProps {
   onLogout: () => void;
+  language: string;
 }
 
-export function PatientDashboard({ onLogout }: PatientDashboardProps) {
+export function PatientDashboard({ onLogout, language }: PatientDashboardProps) {
+  const { t } = useTranslation(language);
   const [activeTab, setActiveTab] = useState('qr');
 
   const tabs = [
-    { id: 'qr', name: 'My Health QR', icon: QrCode, color: '#0b6e4f' },
-    { id: 'records', name: 'Health Records', icon: FileText, color: '#2196F3' },
-    { id: 'ai', name: 'AI Assistant', icon: MessageCircle, color: '#9c27b0' },
-    { id: 'appointments', name: 'Appointments', icon: Calendar, color: '#ff9800' },
-    { id: 'schemes', name: 'Schemes', icon: Gift, color: '#4caf50' },
-    { id: 'emergency', name: 'Emergency', icon: AlertCircle, color: '#f44336' },
+    { id: 'qr', name: t('myHealthQR'), icon: QrCode, color: '#0b6e4f' },
+    { id: 'records', name: t('healthRecords'), icon: FileText, color: '#2196F3' },
+    { id: 'ai', name: t('aiAssistant'), icon: MessageCircle, color: '#9c27b0' },
+    { id: 'appointments', name: t('appointments'), icon: Calendar, color: '#ff9800' },
+    { id: 'schemes', name: t('schemes'), icon: Gift, color: '#4caf50' },
+    { id: 'emergency', name: t('emergency'), icon: AlertCircle, color: '#f44336' },
   ];
 
   return (
@@ -35,20 +38,34 @@ export function PatientDashboard({ onLogout }: PatientDashboardProps) {
                 <User className="w-6 h-6 text-white" />
               </div>
               <div>
-                <h1 className="text-2xl font-bold">Patient Portal</h1>
+                <h1 className="text-2xl font-bold">{t('patientPortal')}</h1>
                 <p className="text-sm opacity-90">Welcome, Ravi Kumar</p>
               </div>
             </div>
             <div className="flex items-center gap-3">
-              <button className="p-2 hover:bg-white/10 rounded-lg transition-all">
-                <Globe className="w-5 h-5" />
-              </button>
+              <div className="relative group">
+                <button className="p-2 hover:bg-white/10 rounded-lg transition-all flex items-center gap-1">
+                  <Globe className="w-5 h-5" />
+                  <span className="text-xs uppercase">{language}</span>
+                </button>
+                <div className="absolute right-0 top-full mt-2 w-32 bg-zinc-900 border border-zinc-800 rounded-xl shadow-xl opacity-0 group-hover:opacity-100 pointer-events-none group-hover:pointer-events-auto transition-all z-50 p-1">
+                  {['en', 'ml', 'hi'].map((lang) => (
+                    <button
+                      key={lang}
+                      onClick={() => window.dispatchEvent(new CustomEvent('change-language', { detail: lang }))}
+                      className={`w-full text-left px-3 py-2 text-xs rounded-lg hover:bg-zinc-800 transition-colors ${language === lang ? 'text-[#10b981] font-bold' : 'text-gray-400'}`}
+                    >
+                      {lang === 'en' ? 'English' : lang === 'ml' ? 'മലയാളം' : 'हिंदी'}
+                    </button>
+                  ))}
+                </div>
+              </div>
               <button
                 onClick={onLogout}
                 className="flex items-center gap-2 px-4 py-2 bg-white/10 hover:bg-white/20 rounded-lg transition-all"
               >
                 <LogOut className="w-5 h-5" />
-                <span className="hidden sm:inline">Logout</span>
+                <span className="hidden sm:inline">{t('logout')}</span>
               </button>
             </div>
           </div>
@@ -89,7 +106,7 @@ export function PatientDashboard({ onLogout }: PatientDashboardProps) {
           transition={{ duration: 0.3 }}
         >
           {activeTab === 'qr' && <HealthQRTab />}
-          {activeTab === 'records' && <HealthRecordsTab />}
+          {activeTab === 'records' && <HealthRecordsTab onNavigate={setActiveTab} />}
           {activeTab === 'ai' && <AIAssistantTab />}
           {activeTab === 'appointments' && <AppointmentsTab />}
           {activeTab === 'schemes' && <SchemesTab />}

@@ -1,64 +1,65 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
-import { Search, Filter, FileText, Calendar, User, Download } from 'lucide-react';
+import { Search, Filter, FileText, Calendar, User, Download, Loader2, Eye, Lock, Unlock, Share2 } from 'lucide-react';
 import { Card } from '@/app/components/ui/card';
 import { Button } from '@/app/components/ui/button';
 import { Badge } from '@/app/components/ui/badge';
 import { Input } from '@/app/components/ui/input';
+import { 
+  Dialog, 
+  DialogContent, 
+  DialogHeader, 
+  DialogTitle, 
+  DialogDescription,
+  DialogFooter
+} from '@/app/components/ui/dialog';
+import { api } from '@/app/utils/api';
 
 export function PatientHistoryTab() {
   const [searchQuery, setSearchQuery] = useState('');
   const [filterType, setFilterType] = useState<string>('all');
+  const [records, setRecords] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [selectedRecord, setSelectedRecord] = useState<any | null>(null);
 
-  const medicalRecords = [
-    {
-      id: '1',
-      date: '2025-01-28',
-      type: 'Prescription',
-      title: 'General Checkup & Medication',
-      hospital: 'Medical College Hospital, Trivandrum',
-      doctor: 'Dr. Priya Menon',
-      diagnosis: 'Type 2 Diabetes Management',
-      medications: ['Metformin 500mg', 'Multivitamin'],
-      notes: 'Patient responding well to treatment. Blood sugar levels stable.',
-      category: 'prescription',
-    },
-    {
-      id: '2',
-      date: '2025-01-25',
-      type: 'Lab Report',
-      title: 'Complete Blood Count',
-      hospital: 'District Hospital, Ernakulam',
-      doctor: 'Dr. Suresh Kumar',
-      results: {
-        'Hemoglobin': '13.5 g/dL',
-        'Blood Sugar (Fasting)': '105 mg/dL',
-        'Cholesterol': '215 mg/dL',
-      },
-      category: 'lab',
-    },
-    {
-      id: '3',
-      date: '2025-01-20',
-      type: 'X-Ray',
-      title: 'Chest X-Ray Report',
-      hospital: 'Community Health Center, Kozhikode',
-      doctor: 'Dr. Aisha Rahman',
-      findings: 'Normal chest X-ray. No abnormalities detected.',
-      category: 'xray',
-    },
-  ];
+  useEffect(() => {
+    fetchRecords();
+  }, []);
+
+  const fetchRecords = async () => {
+    setLoading(true);
+    try {
+      const response = await api.get('/records');
+      setRecords(response.records);
+    } catch (err: any) {
+      setError(err.message || 'Failed to fetch records');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const filters = [
-    { id: 'all', name: 'All Records', count: medicalRecords.length },
-    { id: 'prescription', name: 'Prescriptions', count: 1 },
-    { id: 'lab', name: 'Lab Reports', count: 1 },
-    { id: 'xray', name: 'Imaging', count: 1 },
+    { id: 'all', name: 'All Records', count: records.length },
+    { id: 'prescription', name: 'Prescriptions', count: records.filter(r => r.category === 'prescription').length },
+    { id: 'lab', name: 'Lab Reports', count: records.filter(r => r.category === 'lab').length },
+    { id: 'imaging', name: 'Imaging', count: records.filter(r => ['xray', 'imaging', 'mri'].includes(r.category)).length },
   ];
 
-  const filteredRecords = filterType === 'all'
-    ? medicalRecords
-    : medicalRecords.filter(r => r.category === filterType);
+  const filteredRecords = records.filter(r => {
+    const matchesSearch = r.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                         (r.hospital && r.hospital.toLowerCase().includes(searchQuery.toLowerCase()));
+    const matchesFilter = filterType === 'all' || r.category === filterType;
+    return matchesSearch && matchesFilter;
+  });
+
+  const handleDownload = async (recordId: string, title?: string) => {
+    try {
+      await api.download(`/records/${recordId}/download`, title || 'record');
+    } catch (err: any) {
+      alert(err.message || 'Download failed');
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -120,102 +121,99 @@ export function PatientHistoryTab() {
           Medical History Timeline
         </h3>
 
-        {filteredRecords.map((record, index) => (
-          <motion.div
-            key={record.id}
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: index * 0.1 }}
-          >
-            <Card hover>
-              <div className="flex gap-4">
-                {/* Timeline */}
-                <div className="relative flex-shrink-0">
-                  <div className="w-12 h-12 bg-[#0b6e4f] text-white rounded-full flex items-center justify-center">
-                    <FileText className="w-6 h-6" />
+        {loading ? (
+          <div className="flex flex-col items-center justify-center py-12">
+            <Loader2 className="w-8 h-8 text-[#0b6e4f] animate-spin mb-4" />
+            <p className="text-muted-foreground">Loading medical records...</p>
+          </div>
+        ) : error ? (
+          <div className="p-6 text-center bg-red-900/20 border border-red-900/50 rounded-xl">
+            <p className="text-red-400 mb-4">{error}</p>
+            <Button onClick={fetchRecords} variant="outline">Retry</Button>
+          </div>
+        ) : filteredRecords.length === 0 ? (
+          <div className="text-center py-12 bg-zinc-900/50 rounded-xl border border-zinc-800">
+            <FileText className="w-12 h-12 text-zinc-700 mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-foreground">No records found</h3>
+            <p className="text-muted-foreground mt-1">Search or filter criteria matched no records.</p>
+          </div>
+        ) : (
+          filteredRecords.map((record, index) => (
+            <motion.div
+              key={record._id}
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: index * 0.1 }}
+            >
+              <Card hover>
+                <div className="flex gap-4">
+                  {/* Timeline */}
+                  <div className="relative flex-shrink-0">
+                    <div className="w-12 h-12 bg-[#0b6e4f] text-white rounded-full flex items-center justify-center">
+                      <FileText className="w-6 h-6" />
+                    </div>
+                    {index !== filteredRecords.length - 1 && (
+                      <div className="absolute left-6 top-12 bottom-0 w-0.5 bg-border -mb-4" />
+                    )}
                   </div>
-                  {index !== filteredRecords.length - 1 && (
-                    <div className="absolute left-6 top-12 bottom-0 w-0.5 bg-border -mb-4" />
-                  )}
-                </div>
 
-                {/* Content */}
-                <div className="flex-1">
-                  <div className="flex items-start justify-between mb-2">
-                    <div>
-                      <h4 className="font-semibold text-foreground">{record.title}</h4>
-                      <p className="text-sm text-muted-foreground">{record.type}</p>
-                    </div>
-                    <Badge variant="info">
-                      {new Date(record.date).toLocaleDateString('en-IN')}
-                    </Badge>
-                  </div>
-
-                  <div className="text-sm text-muted-foreground mb-3">
-                    <p>🏥 {record.hospital}</p>
-                    <p>👨‍⚕️ {record.doctor}</p>
-                  </div>
-
-                  {/* Details based on type */}
-                  {record.category === 'prescription' && (
-                    <div className="space-y-2 mb-3">
-                      <div className="p-3 bg-accent rounded-lg">
-                        <p className="text-xs font-medium text-muted-foreground mb-1">Diagnosis:</p>
-                        <p className="text-sm text-foreground">{record.diagnosis}</p>
+                  {/* Content */}
+                  <div className="flex-1">
+                    <div className="flex items-start justify-between mb-2">
+                      <div>
+                        <h4 className="font-semibold text-foreground">{record.title}</h4>
+                        <p className="text-sm text-muted-foreground uppercase">{record.category}</p>
                       </div>
-                      <div className="p-3 bg-accent rounded-lg">
-                        <p className="text-xs font-medium text-muted-foreground mb-1">Medications:</p>
-                        <ul className="text-sm text-foreground space-y-1">
-                          {record.medications?.map((med, i) => (
-                            <li key={i}>• {med}</li>
-                          ))}
-                        </ul>
+                      <Badge variant="info">
+                        {new Date(record.createdAt).toLocaleDateString('en-IN')}
+                      </Badge>
+                    </div>
+
+                    <div className="text-sm text-muted-foreground mb-3">
+                      <p>🏥 {record.hospital || 'Not specified'}</p>
+                      <p>👨‍⚕️ {record.doctor || 'Not specified'}</p>
+                    </div>
+
+                    {record.description && (
+                      <div className="p-3 bg-accent rounded-lg mb-3">
+                        <p className="text-xs font-medium text-muted-foreground mb-1">Details:</p>
+                        <p className="text-sm text-foreground">{record.description}</p>
                       </div>
-                      {record.notes && (
-                        <div className="p-3 bg-blue-50 rounded-lg">
-                          <p className="text-xs font-medium text-muted-foreground mb-1">Notes:</p>
-                          <p className="text-sm text-foreground">{record.notes}</p>
-                        </div>
-                      )}
-                    </div>
-                  )}
+                    )}
 
-                  {record.category === 'lab' && record.results && (
-                    <div className="p-3 bg-accent rounded-lg mb-3">
-                      <p className="text-xs font-medium text-muted-foreground mb-2">Test Results:</p>
-                      <div className="grid grid-cols-2 gap-2">
-                        {Object.entries(record.results).map(([key, value]) => (
-                          <div key={key} className="text-sm">
-                            <p className="text-muted-foreground">{key}</p>
-                            <p className="font-semibold text-foreground">{value}</p>
-                          </div>
-                        ))}
-                      </div>
+                    {/* Actions */}
+                    <div className="flex gap-2">
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        icon={<Eye className="w-4 h-4" />}
+                        onClick={() => setSelectedRecord(record)}
+                      >
+                        View Full
+                      </Button>
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        icon={<Download className="w-4 h-4" />}
+                        onClick={() => handleDownload(record._id, record.title)}
+                      >
+                        Download
+                      </Button>
                     </div>
-                  )}
-
-                  {record.category === 'xray' && record.findings && (
-                    <div className="p-3 bg-accent rounded-lg mb-3">
-                      <p className="text-xs font-medium text-muted-foreground mb-1">Findings:</p>
-                      <p className="text-sm text-foreground">{record.findings}</p>
-                    </div>
-                  )}
-
-                  {/* Actions */}
-                  <div className="flex gap-2">
-                    <Button variant="outline" size="sm" icon={<FileText className="w-4 h-4" />}>
-                      View Full
-                    </Button>
-                    <Button variant="ghost" size="sm" icon={<Download className="w-4 h-4" />}>
-                      Download
-                    </Button>
                   </div>
                 </div>
-              </div>
-            </Card>
-          </motion.div>
-        ))}
+              </Card>
+            </motion.div>
+          ))
+        )}
       </div>
+
+      <RecordDetailsDialog 
+        record={selectedRecord} 
+        open={!!selectedRecord} 
+        onOpenChange={(open) => !open && setSelectedRecord(null)}
+        onDownload={handleDownload}
+      />
 
       {/* Patient Summary */}
       <Card className="bg-[#e8f5e9] border-[#0b6e4f]">
@@ -240,5 +238,90 @@ export function PatientHistoryTab() {
         </div>
       </Card>
     </div>
+  );
+}
+
+function RecordDetailsDialog({ record, open, onOpenChange, onDownload }: { 
+  record: any | null, 
+  open: boolean, 
+  onOpenChange: (open: boolean) => void,
+  onDownload: (id: string, title: string) => void
+}) {
+  if (!record) return null;
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-2xl bg-zinc-950 border-zinc-800 text-white">
+        <DialogHeader>
+          <DialogTitle className="text-2xl font-bold">{record.title}</DialogTitle>
+          <DialogDescription className="text-zinc-400">
+            {new Date(record.createdAt).toLocaleDateString('en-IN', {
+              year: 'numeric',
+              month: 'long',
+              day: 'numeric',
+            })} • {record.category?.toUpperCase() || 'RECORD'}
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="grid gap-6 py-4 text-white">
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-1">
+              <p className="text-xs text-zinc-500 uppercase font-semibold">Hospital</p>
+              <p className="text-sm">{record.hospital || 'Not specified'}</p>
+            </div>
+            <div className="space-y-1">
+              <p className="text-xs text-zinc-500 uppercase font-semibold">Doctor</p>
+              <p className="text-sm">{record.doctor || 'Not specified'}</p>
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <p className="text-xs text-zinc-500 uppercase font-semibold">Description</p>
+            <p className="text-sm text-zinc-300 bg-zinc-900/50 p-3 rounded-lg border border-zinc-800">
+              {record.description || 'No additional description provided for this record.'}
+            </p>
+          </div>
+
+          {record.fileUrl && (
+            <div className="space-y-2">
+              <p className="text-xs text-zinc-500 uppercase font-semibold">Document Preview</p>
+              <div className="aspect-video bg-zinc-900 rounded-lg border border-zinc-800 flex items-center justify-center overflow-hidden">
+                {record.fileUrl.endsWith('.pdf') ? (
+                  <div className="text-center p-4">
+                    <FileText className="w-12 h-12 text-zinc-700 mx-auto mb-2" />
+                    <p className="text-xs text-zinc-500">PDF Document - Use download to view full content</p>
+                  </div>
+                ) : (
+                  <img 
+                    src={`${api.API_URL.replace('/api', '')}/uploads/${record.fileUrl}`} 
+                    alt={record.title}
+                    className="max-w-full max-h-full object-contain"
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).style.display = 'none';
+                    }}
+                  />
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+
+        <DialogFooter className="gap-2 sm:gap-0">
+          <div className="flex gap-2 w-full sm:w-auto">
+            <Button
+              variant="outline"
+              className="flex-1 sm:flex-none border-zinc-700 hover:bg-zinc-800 text-white"
+              onClick={() => onDownload(record._id, record.title)}
+            >
+              <Download className="w-4 h-4 mr-2" />
+              Download
+            </Button>
+          </div>
+          <Button onClick={() => onOpenChange(false)} className="bg-[#0b6e4f] hover:bg-[#0b6e4f]/90 text-white">
+            Close
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }

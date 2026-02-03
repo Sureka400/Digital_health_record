@@ -1,16 +1,19 @@
 import React, { useState } from 'react';
 import { motion } from 'motion/react';
-import { BarChart3, Users, Brain, Shield, LogOut, User } from 'lucide-react';
+import { BarChart3, Users, Brain, Shield, LogOut, User, Globe } from 'lucide-react';
 import { AnalyticsTab } from '@/app/components/admin/AnalyticsTab';
 import { UserManagementTab } from '@/app/components/admin/UserManagementTab';
 import { PolicyInsightsTab } from '@/app/components/admin/PolicyInsightsTab';
 import { SystemMonitoringTab } from '@/app/components/admin/SystemMonitoringTab';
+import { useTranslation } from '@/app/utils/translations';
 
 interface AdminDashboardProps {
   onLogout: () => void;
+  language?: string;
 }
 
-export function AdminDashboard({ onLogout }: AdminDashboardProps) {
+export function AdminDashboard({ onLogout, language = 'en' }: AdminDashboardProps) {
+  const { t } = useTranslation(language);
   const [activeTab, setActiveTab] = useState('analytics');
 
   const tabs = [
@@ -31,22 +34,41 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
                 <User className="w-6 h-6 text-white" />
               </div>
               <div>
-                <h1 className="text-2xl font-bold">Admin Portal</h1>
+                <h1 className="text-2xl font-bold">{t('adminPortal')}</h1>
                 <p className="text-sm opacity-90">Government of Kerala</p>
               </div>
             </div>
-            <button
-              onClick={onLogout}
+            <div className="flex items-center gap-3">
+              <div className="relative group">
+                <button className="p-2 hover:bg-white/10 rounded-lg transition-all flex items-center gap-1">
+                  <Globe className="w-5 h-5" />
+                  <span className="text-xs uppercase">{language}</span>
+                </button>
+                <div className="absolute right-0 top-full mt-2 w-32 bg-zinc-900 border border-zinc-800 rounded-xl shadow-xl opacity-0 group-hover:opacity-100 pointer-events-none group-hover:pointer-events-auto transition-all z-50 p-1">
+                  {['en', 'ml', 'hi'].map((lang) => (
+                    <button
+                      key={lang}
+                      onClick={() => window.dispatchEvent(new CustomEvent('change-language', { detail: lang }))}
+                      className={`w-full text-left px-3 py-2 text-xs rounded-lg hover:bg-zinc-800 transition-colors ${language === lang ? 'text-[#10b981] font-bold' : 'text-gray-400'}`}
+                    >
+                      {lang === 'en' ? 'English' : lang === 'ml' ? 'മലയാളം' : 'हिंदी'}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <button
+                onClick={onLogout}
               className="flex items-center gap-2 px-4 py-2 bg-white/10 hover:bg-white/20 rounded-lg transition-all"
             >
               <LogOut className="w-5 h-5" />
-              <span className="hidden sm:inline">Logout</span>
+              <span className="hidden sm:inline">{t('logout')}</span>
             </button>
           </div>
         </div>
       </div>
+    </div>
 
-      {/* Tab Navigation */}
+    {/* Tab Navigation */}
       <div className="bg-zinc-900/80 backdrop-blur-xl border-b border-zinc-800 sticky top-0 z-10 shadow-sm">
         <div className="container mx-auto px-4">
           <div className="flex overflow-x-auto no-scrollbar gap-1 py-2">

@@ -5,7 +5,11 @@ import { Card } from '@/app/components/ui/card';
 import { Button } from '@/app/components/ui/button';
 import { Badge } from '@/app/components/ui/badge';
 
-export function ScanQRTab() {
+interface ScanQRTabProps {
+  onNavigate?: (tabId: string) => void;
+}
+
+export function ScanQRTab({ onNavigate }: ScanQRTabProps) {
   const [isScanning, setIsScanning] = useState(false);
   const [scannedPatient, setScannedPatient] = useState<any>(null);
 
@@ -191,10 +195,18 @@ export function ScanQRTab() {
 
           {/* Action Buttons */}
           <div className="grid grid-cols-2 gap-3">
-            <Button variant="primary" fullWidth>
+            <Button 
+              variant="primary" 
+              fullWidth
+              onClick={() => onNavigate && onNavigate('history')}
+            >
               View Full History
             </Button>
-            <Button variant="secondary" fullWidth>
+            <Button 
+              variant="secondary" 
+              fullWidth
+              onClick={() => onNavigate && onNavigate('upload')}
+            >
               Start Consultation
             </Button>
           </div>

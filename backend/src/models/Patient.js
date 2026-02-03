@@ -1,0 +1,41 @@
+const mongoose = require('mongoose');
+const bcrypt = require('bcryptjs');
+const { encryptField, decryptField } = require('../utils/crypto');
+
+const roles = ['PATIENT', 'DOCTOR', 'ADMIN'];
+
+const PatientSchema = new mongoose.Schema({
+  name: { type: String, required: true },
+  email: { type: String, required: true, unique: true, index: true },
+  password: { type: String, required: true },
+  phone_enc: { type: String },
+  role: { type: String, enum: roles, default: 'PATIENT' },
+  preferredLanguage: { type: String, default: 'en' },
+  // AI-ready fields
+  aiSummary: { type: String },
+  embedding: { type: [Number] },
+  // emergency access token hash and flag
+  emergency: {
+    enabled: { type: Boolean, default: false },
+    tokenHash: { type: String },
+    expiresAt: { type: Date }
+  }
+}, { timestamps: true, toJSON: { virtuals: true }, toObject: { virtuals: true } });
+
+PatientSchema.virtual('phone')
+  .get(function () { return this.phone_enc ? decryptField(this.phone_enc) : null; })
+  .set(function (v) { this.phone_enc = v ? encryptField(v) : null; });
+
+PatientSchema.pre('save', async function (next) {
+  if (this.isModified('password')) {
+    const salt = await bcrypt.genSalt(10);
+    this.password = await bcrypt.hash(this.password, salt);
+  }
+  next();
+});
+
+PatientSchema.methods.comparePassword = function (candidate) {
+  return bcrypt.compare(candidate, this.password);
+};
+
+module.exports = mongoose.model('Patient', PatientSchema);

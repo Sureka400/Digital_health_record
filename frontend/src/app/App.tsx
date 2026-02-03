@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { LanguageSelectionScreen } from '@/app/components/screens/LanguageSelectionScreen';
 import { LoginScreen } from '@/app/components/screens/LoginScreen';
 import { PatientDashboard } from '@/app/components/dashboards/PatientDashboard';
@@ -12,6 +12,14 @@ export default function App() {
   const [currentScreen, setCurrentScreen] = useState<AppScreen>('language');
   const [selectedLanguage, setSelectedLanguage] = useState<string>('en');
   const [userRole, setUserRole] = useState<UserRole>(null);
+
+  useEffect(() => {
+    const handleLangChange = (e: any) => {
+      setSelectedLanguage(e.detail);
+    };
+    window.addEventListener('change-language', handleLangChange);
+    return () => window.removeEventListener('change-language', handleLangChange);
+  }, []);
 
   const handleLanguageSelect = (language: string) => {
     setSelectedLanguage(language);
@@ -43,15 +51,15 @@ export default function App() {
 
       {/* Dashboard - Role-based rendering */}
       {currentScreen === 'dashboard' && userRole === 'patient' && (
-        <PatientDashboard onLogout={handleLogout} />
+        <PatientDashboard onLogout={handleLogout} language={selectedLanguage} />
       )}
 
       {currentScreen === 'dashboard' && userRole === 'doctor' && (
-        <DoctorDashboard onLogout={handleLogout} />
+        <DoctorDashboard onLogout={handleLogout} language={selectedLanguage} />
       )}
 
       {currentScreen === 'dashboard' && userRole === 'admin' && (
-        <AdminDashboard onLogout={handleLogout} />
+        <AdminDashboard onLogout={handleLogout} language={selectedLanguage} />
       )}
     </div>
   );

@@ -5,37 +5,59 @@ import { Card } from '@/app/components/ui/card';
 import { Button } from '@/app/components/ui/button';
 import { Input } from '@/app/components/ui/input';
 import { Badge } from '@/app/components/ui/badge';
+import { api } from '@/app/utils/api';
 
 export function UploadRecordsTab() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [patientId, setPatientId] = useState('6981fe42f8fab946afe86511');
   const [recordType, setRecordType] = useState('prescription');
+  const [title, setTitle] = useState('');
+  const [description, setDescription] = useState('');
+  const [hospital, setHospital] = useState('Medical College Hospital, Trivandrum');
+  const [doctor, setDoctor] = useState('Dr. Anjali Menon');
   const [uploading, setUploading] = useState(false);
   const [uploaded, setUploaded] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const recordTypes = [
     { id: 'prescription', name: 'Prescription', icon: '💊' },
     { id: 'lab', name: 'Lab Report', icon: '🧪' },
-    { id: 'xray', name: 'X-Ray/Scan', icon: '🩻' },
+    { id: 'imaging', name: 'X-Ray/Scan', icon: '🩻' },
     { id: 'notes', name: 'Clinical Notes', icon: '📝' },
   ];
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files && event.target.files[0]) {
       setSelectedFile(event.target.files[0]);
+      setTitle(event.target.files[0].name.split('.')[0]);
     }
   };
 
-  const handleUpload = () => {
+  const handleUpload = async () => {
+    if (!selectedFile) return;
     setUploading(true);
-    // Simulate upload
-    setTimeout(() => {
-      setUploading(false);
+    setError(null);
+    try {
+      await api.upload('/records', selectedFile, {
+        title,
+        category: recordType,
+        description,
+        hospital,
+        doctor,
+        patientId,
+      });
       setUploaded(true);
       setTimeout(() => {
         setUploaded(false);
         setSelectedFile(null);
+        setTitle('');
+        setDescription('');
       }, 3000);
-    }, 2000);
+    } catch (err: any) {
+      setError(err.message || 'Upload failed');
+    } finally {
+      setUploading(false);
+    }
   };
 
   return (
@@ -57,12 +79,16 @@ export function UploadRecordsTab() {
           type="text"
           placeholder="Enter Patient ID or scan QR code"
           icon={<FileText className="w-5 h-5" />}
+          value={patientId}
+          onChange={(e) => setPatientId(e.target.value)}
         />
         <div className="mt-3 p-3 bg-accent rounded-lg">
           <div className="flex items-center justify-between">
             <div>
-              <p className="font-semibold text-foreground">Rajesh Kumar</p>
-              <p className="text-sm text-muted-foreground">ID: KL-MW-2025-12345</p>
+              <p className="font-semibold text-foreground">
+                {patientId === '6981fe42f8fab946afe86511' ? 'John Doe' : 'Unknown Patient'}
+              </p>
+              <p className="text-sm text-muted-foreground">ID: {patientId}</p>
             </div>
             <Badge variant="success">Selected</Badge>
           </div>
@@ -169,38 +195,49 @@ export function UploadRecordsTab() {
                 <div className="space-y-3">
                   <Input
                     type="text"
+                    placeholder="Record Title"
+                    label="Title"
+                    value={title}
+                    onChange={(e) => setTitle(e.target.value)}
+                  />
+                  <Input
+                    type="text"
                     placeholder="Add notes or description..."
                     label="Notes (Optional)"
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
+                  />
+                  <Input
+                    type="text"
+                    placeholder="Hospital Name"
+                    label="Hospital"
+                    value={hospital}
+                    onChange={(e) => setHospital(e.target.value)}
+                  />
+                  <Input
+                    type="text"
+                    placeholder="Doctor Name"
+                    label="Doctor"
+                    value={doctor}
+                    onChange={(e) => setDoctor(e.target.value)}
                   />
                   
-                  <div>
-                    <label className="block text-sm font-medium text-foreground mb-2">
-                      Language
-                    </label>
-                    <div className="flex gap-2">
-                      {['English', 'Malayalam', 'Hindi'].map((lang) => (
-                        <button
-                          key={lang}
-                          className="px-3 py-1.5 bg-zinc-800/50 border border-zinc-700 rounded-lg text-sm hover:border-[#0b6e4f] transition-all text-white"
-                        >
-                          {lang}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                </div>
+                  {error && (
+                    <p className="text-sm text-red-500">{error}</p>
+                  )}
 
-                <Button
-                  variant="primary"
-                  size="lg"
-                  fullWidth
-                  onClick={handleUpload}
-                  disabled={uploading}
-                  icon={uploading ? undefined : <Upload className="w-5 h-5" />}
-                  className="mt-4"
-                >
-                  {uploading ? 'Uploading...' : 'Upload & Link to Patient'}
-                </Button>
+                  <Button
+                    variant="primary"
+                    size="lg"
+                    fullWidth
+                    onClick={handleUpload}
+                    disabled={uploading}
+                    icon={uploading ? undefined : <Upload className="w-5 h-5" />}
+                    className="mt-4"
+                  >
+                    {uploading ? 'Uploading...' : 'Upload & Link to Patient'}
+                  </Button>
+                </div>
               </motion.div>
             ) : (
               <motion.div

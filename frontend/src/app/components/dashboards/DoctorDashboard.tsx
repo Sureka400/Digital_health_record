@@ -6,20 +6,23 @@ import { PatientHistoryTab } from '@/app/components/doctor/PatientHistoryTab';
 import { UploadRecordsTab } from '@/app/components/doctor/UploadRecordsTab';
 import { AIClinicalTab } from '@/app/components/doctor/AIClinicalTab';
 import { MyAppointmentsTab } from '@/app/components/doctor/MyAppointmentsTab';
+import { useTranslation } from '@/app/utils/translations';
 
 interface DoctorDashboardProps {
   onLogout: () => void;
+  language: string;
 }
 
-export function DoctorDashboard({ onLogout }: DoctorDashboardProps) {
+export function DoctorDashboard({ onLogout, language }: DoctorDashboardProps) {
+  const { t } = useTranslation(language);
   const [activeTab, setActiveTab] = useState('scan');
 
   const tabs = [
-    { id: 'scan', name: 'Scan Patient QR', icon: QrCode, color: '#0b6e4f' },
-    { id: 'history', name: 'Patient History', icon: FileText, color: '#2196F3' },
-    { id: 'upload', name: 'Upload Records', icon: Upload, color: '#ff9800' },
-    { id: 'ai', name: 'AI Clinical Assistant', icon: Sparkles, color: '#9c27b0' },
-    { id: 'appointments', name: 'My Appointments', icon: Calendar, color: '#4caf50' },
+    { id: 'scan', name: t('scanPatientQR'), icon: QrCode, color: '#0b6e4f' },
+    { id: 'history', name: t('patientHistory'), icon: FileText, color: '#2196F3' },
+    { id: 'upload', name: t('uploadRecords'), icon: Upload, color: '#ff9800' },
+    { id: 'ai', name: t('aiClinicalAssistant'), icon: Sparkles, color: '#9c27b0' },
+    { id: 'appointments', name: t('myAppointments'), icon: Calendar, color: '#4caf50' },
   ];
 
   return (
@@ -33,22 +36,41 @@ export function DoctorDashboard({ onLogout }: DoctorDashboardProps) {
                 <User className="w-6 h-6 text-white" />
               </div>
               <div>
-                <h1 className="text-2xl font-bold">Doctor Portal</h1>
+                <h1 className="text-2xl font-bold">{t('doctorPortal')}</h1>
                 <p className="text-sm opacity-90">Dr. Anjali Menon, MBBS</p>
               </div>
             </div>
-            <button
-              onClick={onLogout}
+            <div className="flex items-center gap-3">
+              <div className="relative group">
+                <button className="p-2 hover:bg-white/10 rounded-lg transition-all flex items-center gap-1">
+                  <Globe className="w-5 h-5" />
+                  <span className="text-xs uppercase">{language}</span>
+                </button>
+                <div className="absolute right-0 top-full mt-2 w-32 bg-zinc-900 border border-zinc-800 rounded-xl shadow-xl opacity-0 group-hover:opacity-100 pointer-events-none group-hover:pointer-events-auto transition-all z-50 p-1">
+                  {['en', 'ml', 'hi'].map((lang) => (
+                    <button
+                      key={lang}
+                      onClick={() => window.dispatchEvent(new CustomEvent('change-language', { detail: lang }))}
+                      className={`w-full text-left px-3 py-2 text-xs rounded-lg hover:bg-zinc-800 transition-colors ${language === lang ? 'text-[#10b981] font-bold' : 'text-gray-400'}`}
+                    >
+                      {lang === 'en' ? 'English' : lang === 'ml' ? 'മലയാളം' : 'हिंदी'}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <button
+                onClick={onLogout}
               className="flex items-center gap-2 px-4 py-2 bg-white/10 hover:bg-white/20 rounded-lg transition-all"
             >
               <LogOut className="w-5 h-5" />
-              <span className="hidden sm:inline">Logout</span>
+              <span className="hidden sm:inline">{t('logout')}</span>
             </button>
           </div>
         </div>
       </div>
+    </div>
 
-      {/* Tab Navigation */}
+    {/* Tab Navigation */}
       <div className="bg-zinc-900/80 backdrop-blur-xl border-b border-zinc-800 sticky top-0 z-10 shadow-sm">
         <div className="container mx-auto px-4">
           <div className="flex overflow-x-auto no-scrollbar gap-1 py-2">
@@ -81,7 +103,7 @@ export function DoctorDashboard({ onLogout }: DoctorDashboardProps) {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3 }}
         >
-          {activeTab === 'scan' && <ScanQRTab />}
+          {activeTab === 'scan' && <ScanQRTab onNavigate={setActiveTab} />}
           {activeTab === 'history' && <PatientHistoryTab />}
           {activeTab === 'upload' && <UploadRecordsTab />}
           {activeTab === 'ai' && <AIClinicalTab />}

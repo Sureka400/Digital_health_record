@@ -4,6 +4,8 @@ import { Phone, QrCode, CreditCard, Mic, Heart, Users, Activity } from 'lucide-r
 import { Button } from '@/app/components/ui/button';
 import { Input } from '@/app/components/ui/input';
 import { ImageWithFallback } from '@/app/components/figma/ImageWithFallback';
+import { api } from '@/app/utils/api';
+import { useTranslation } from '@/app/utils/translations';
 
 interface LoginScreenProps {
   onLogin: (role: string) => void;
@@ -11,12 +13,30 @@ interface LoginScreenProps {
 }
 
 export function LoginScreen({ onLogin, language }: LoginScreenProps) {
+  const { t } = useTranslation(language);
   const [loginMethod, setLoginMethod] = useState<'phone' | 'qr' | 'id'>('phone');
   const [phoneNumber, setPhoneNumber] = useState('');
   const [showImpactStats, setShowImpactStats] = useState(true);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const handleLogin = (role: string) => {
-    onLogin(role);
+  const handleLogin = async (role: string) => {
+    setLoading(true);
+    setError(null);
+    try {
+      // For demo purposes, we use hardcoded credentials matching the seed script
+      const email = role === 'patient' ? 'patient@demo.com' : (role === 'doctor' ? 'doctor@demo.com' : 'admin@demo.com');
+      const password = 'password123';
+      
+      const response = await api.post('/auth/login', { email, password });
+      localStorage.setItem('token', response.token);
+      localStorage.setItem('role', role);
+      onLogin(role);
+    } catch (err: any) {
+      setError(err.message || 'Login failed');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -104,11 +124,17 @@ export function LoginScreen({ onLogin, language }: LoginScreenProps) {
                     <Heart className="w-6 h-6 text-white" />
                   </div>
                   <div>
-                    <h2 className="text-2xl font-bold text-white">Welcome Back</h2>
-                    <p className="text-sm text-gray-400">Sign in to access your health portal</p>
+                    <h2 className="text-2xl font-bold text-white">{t('welcome')}</h2>
+                    <p className="text-sm text-gray-400">{t('signIn')}</p>
                   </div>
                 </div>
               </div>
+
+              {error && (
+                <div className="mb-4 p-3 bg-red-900/50 border border-red-500 rounded-lg text-red-200 text-sm">
+                  {error}
+                </div>
+              )}
 
               {/* Login Method Selection */}
               <div className="grid grid-cols-3 gap-2 mb-6 p-1 bg-zinc-800/50 rounded-lg">
@@ -121,7 +147,7 @@ export function LoginScreen({ onLogin, language }: LoginScreenProps) {
                   }`}
                 >
                   <Phone className="w-4 h-4 mx-auto mb-1" />
-                  Phone
+                  {t('phone')}
                 </button>
                 <button
                   onClick={() => setLoginMethod('qr')}
@@ -132,7 +158,7 @@ export function LoginScreen({ onLogin, language }: LoginScreenProps) {
                   }`}
                 >
                   <QrCode className="w-4 h-4 mx-auto mb-1" />
-                  QR Code
+                  {t('qrCode')}
                 </button>
                 <button
                   onClick={() => setLoginMethod('id')}
@@ -143,7 +169,7 @@ export function LoginScreen({ onLogin, language }: LoginScreenProps) {
                   }`}
                 >
                   <CreditCard className="w-4 h-4 mx-auto mb-1" />
-                  Gov ID
+                  {t('govId')}
                 </button>
               </div>
 
@@ -160,7 +186,7 @@ export function LoginScreen({ onLogin, language }: LoginScreenProps) {
                     value={phoneNumber}
                     onChange={(e) => setPhoneNumber(e.target.value)}
                     icon={<Phone className="w-5 h-5" />}
-                    label="Mobile Number"
+                    label={t('mobileNumber')}
                   />
                   
                   <button className="flex items-center gap-2 text-sm text-[#2196F3] hover:underline">
@@ -168,8 +194,8 @@ export function LoginScreen({ onLogin, language }: LoginScreenProps) {
                     Use voice input
                   </button>
 
-                  <Button variant="primary" size="lg" fullWidth onClick={() => handleLogin('patient')}>
-                    Send OTP
+                  <Button variant="primary" size="lg" fullWidth onClick={() => handleLogin('patient')} disabled={loading}>
+                    {loading ? t('sending') : t('sendOTP')}
                   </Button>
                 </motion.div>
               )}
@@ -187,8 +213,8 @@ export function LoginScreen({ onLogin, language }: LoginScreenProps) {
                   <p className="text-sm text-muted-foreground mb-4">
                     Scan your health QR code to sign in instantly
                   </p>
-                  <Button variant="outline" size="lg" fullWidth onClick={() => handleLogin('patient')}>
-                    Open Camera to Scan
+                  <Button variant="outline" size="lg" fullWidth onClick={() => handleLogin('patient')} disabled={loading}>
+                    {loading ? t('authenticating') : t('openCamera')}
                   </Button>
                 </motion.div>
               )}
@@ -204,10 +230,10 @@ export function LoginScreen({ onLogin, language }: LoginScreenProps) {
                     type="text"
                     placeholder="Enter your government ID (optional)"
                     icon={<CreditCard className="w-5 h-5" />}
-                    label="Government ID"
+                    label={t('govId')}
                   />
-                  <Button variant="primary" size="lg" fullWidth onClick={() => handleLogin('patient')}>
-                    Continue
+                  <Button variant="primary" size="lg" fullWidth onClick={() => handleLogin('patient')} disabled={loading}>
+                    {loading ? t('processing') : t('continue')}
                   </Button>
                 </motion.div>
               )}
@@ -216,13 +242,13 @@ export function LoginScreen({ onLogin, language }: LoginScreenProps) {
               <div className="mt-8 pt-6 border-t border-border">
                 <p className="text-xs text-muted-foreground mb-3 text-center">Quick Demo Access</p>
                 <div className="grid grid-cols-3 gap-2">
-                  <Button variant="outline" size="sm" onClick={() => handleLogin('patient')}>
+                  <Button variant="outline" size="sm" onClick={() => handleLogin('patient')} disabled={loading}>
                     Patient
                   </Button>
-                  <Button variant="outline" size="sm" onClick={() => handleLogin('doctor')}>
+                  <Button variant="outline" size="sm" onClick={() => handleLogin('doctor')} disabled={loading}>
                     Doctor
                   </Button>
-                  <Button variant="outline" size="sm" onClick={() => handleLogin('admin')}>
+                  <Button variant="outline" size="sm" onClick={() => handleLogin('admin')} disabled={loading}>
                     Admin
                   </Button>
                 </div>
