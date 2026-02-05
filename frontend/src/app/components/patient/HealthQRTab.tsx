@@ -3,18 +3,23 @@ import { motion } from 'motion/react';
 import { QrCode, Download, Share2, Wifi } from 'lucide-react';
 import { Card } from '@/app/components/ui/card';
 import { Button } from '@/app/components/ui/button';
+import { useTranslation } from '@/app/utils/translations';
+import { useLanguage } from '@/app/context/LanguageContext';
 
 export function HealthQRTab() {
+  const { language } = useLanguage();
+  const { t } = useTranslation(language);
+
   return (
     <div className="space-y-6">
       {/* Main QR Card */}
       <Card className="text-center">
         <div className="mb-6">
           <h2 className="text-2xl font-bold text-foreground mb-2">
-            Your Health QR Code
+            {t('yourHealthQR')}
           </h2>
           <p className="text-sm text-muted-foreground">
-            Scan at any hospital across Kerala for instant access
+            {t('scanAtHospital')}
           </p>
         </div>
 
@@ -52,20 +57,20 @@ export function HealthQRTab() {
         <div className="bg-accent rounded-xl p-4 mb-6 text-left">
           <div className="grid grid-cols-2 gap-3 text-sm">
             <div>
-              <p className="text-muted-foreground">Name</p>
+              <p className="text-muted-foreground">{t('name')}</p>
               <p className="font-medium">Rajesh Kumar</p>
             </div>
             <div>
-              <p className="text-muted-foreground">ID</p>
+              <p className="text-muted-foreground">{t('id')}</p>
               <p className="font-medium">KL-MW-2025-12345</p>
             </div>
             <div>
-              <p className="text-muted-foreground">Blood Group</p>
+              <p className="text-muted-foreground">{t('bloodGroup')}</p>
               <p className="font-medium text-red-600">B+</p>
             </div>
             <div>
-              <p className="text-muted-foreground">Age</p>
-              <p className="font-medium">32 years</p>
+              <p className="text-muted-foreground">{t('age')}</p>
+              <p className="font-medium">32 {t('years')}</p>
             </div>
           </div>
         </div>
@@ -73,10 +78,10 @@ export function HealthQRTab() {
         {/* Action Buttons */}
         <div className="grid grid-cols-2 gap-3">
           <Button variant="outline" icon={<Download className="w-4 h-4" />}>
-            Download
+            {t('download')}
           </Button>
           <Button variant="outline" icon={<Share2 className="w-4 h-4" />}>
-            Share
+            {t('share')}
           </Button>
         </div>
       </Card>
@@ -89,10 +94,10 @@ export function HealthQRTab() {
           </div>
           <div>
             <h3 className="font-semibold text-foreground mb-1">
-              ✓ Offline Access Enabled
+              ✓ {t('offlineAccessEnabled')}
             </h3>
             <p className="text-sm text-muted-foreground">
-              Your QR code works without internet. It contains encrypted emergency health information that can be read by any authorized hospital.
+              {t('offlineQRDesc')}
             </p>
           </div>
         </div>
@@ -100,14 +105,14 @@ export function HealthQRTab() {
 
       {/* Critical Alerts */}
       <Card className="bg-red-50 border-red-200">
-        <h3 className="font-semibold text-red-800 mb-3">⚠️ Critical Alerts</h3>
+        <h3 className="font-semibold text-red-800 mb-3">⚠️ {t('criticalAlerts')}</h3>
         <div className="space-y-2 text-sm">
           <div className="flex justify-between items-center">
-            <span className="text-red-700">Drug Allergy: Penicillin</span>
+            <span className="text-red-700">{t('drugAllergy')}: Penicillin</span>
             <span className="px-2 py-1 bg-red-200 text-red-800 rounded text-xs">High</span>
           </div>
           <div className="flex justify-between items-center">
-            <span className="text-red-700">Condition: Type 2 Diabetes</span>
+            <span className="text-red-700">{t('condition')}: Type 2 Diabetes</span>
             <span className="px-2 py-1 bg-yellow-200 text-yellow-800 rounded text-xs">Monitor</span>
           </div>
         </div>

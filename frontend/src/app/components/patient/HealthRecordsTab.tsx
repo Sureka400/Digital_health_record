@@ -13,6 +13,8 @@ import {
   DialogFooter
 } from '@/app/components/ui/dialog';
 import { api } from '@/app/utils/api';
+import { useTranslation } from '@/app/utils/translations';
+import { useLanguage } from '@/app/context/LanguageContext';
 
 interface MedicalRecord {
   _id: string;
@@ -31,6 +33,8 @@ interface HealthRecordsTabProps {
 }
 
 export function HealthRecordsTab({ onNavigate }: HealthRecordsTabProps) {
+  const { language } = useLanguage();
+  const { t } = useTranslation(language);
   const [records, setRecords] = useState<MedicalRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -107,14 +111,14 @@ export function HealthRecordsTab({ onNavigate }: HealthRecordsTabProps) {
         <div className="flex items-center justify-between">
           <div>
             <h2 className="text-xl font-bold text-foreground mb-1">
-              My Health Records
+              {t('myHealthRecords')}
             </h2>
             <p className="text-sm text-muted-foreground">
-              Timeline-based medical history with secure access control
+              {t('timelineBasedHistory')}
             </p>
           </div>
           <Badge variant="ai">
-            ✨ AI Classified
+            ✨ {t('aiClassified')}
           </Badge>
         </div>
       </Card>
@@ -122,7 +126,7 @@ export function HealthRecordsTab({ onNavigate }: HealthRecordsTabProps) {
       {loading ? (
         <div className="flex flex-col items-center justify-center py-12">
           <Loader2 className="w-8 h-8 text-[#0b6e4f] animate-spin mb-4" />
-          <p className="text-muted-foreground">Loading your health records...</p>
+          <p className="text-muted-foreground">{t('loadingRecords')}</p>
         </div>
       ) : error ? (
         <div className="p-6 text-center bg-red-900/20 border border-red-900/50 rounded-xl">
@@ -132,8 +136,8 @@ export function HealthRecordsTab({ onNavigate }: HealthRecordsTabProps) {
       ) : records.length === 0 ? (
         <div className="text-center py-12 bg-zinc-900/50 rounded-xl border border-zinc-800">
           <FileText className="w-12 h-12 text-zinc-700 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-foreground">No records found</h3>
-          <p className="text-muted-foreground mt-1">You haven't uploaded any medical records yet.</p>
+          <h3 className="text-lg font-medium text-foreground">{t('noRecordsFound')}</h3>
+          <p className="text-muted-foreground mt-1">{t('noRecordsDesc')}</p>
         </div>
       ) : (
         /* Timeline */
@@ -166,7 +170,7 @@ export function HealthRecordsTab({ onNavigate }: HealthRecordsTabProps) {
                         <h3 className="font-semibold text-foreground">{record.title}</h3>
                         <p className="text-sm text-muted-foreground flex items-center gap-2 mt-1">
                           <Calendar className="w-3 h-3" />
-                          {new Date(record.createdAt).toLocaleDateString('en-IN', {
+                          {new Date(record.createdAt).toLocaleDateString(language === 'en' ? 'en-IN' : language, {
                             year: 'numeric',
                             month: 'long',
                             day: 'numeric',
@@ -191,7 +195,7 @@ export function HealthRecordsTab({ onNavigate }: HealthRecordsTabProps) {
                         icon={<Eye className="w-4 h-4" />}
                         onClick={() => setSelectedRecord(record)}
                       >
-                        View
+                        {t('view')}
                       </Button>
                     <Button
                       variant="ghost"
@@ -199,7 +203,7 @@ export function HealthRecordsTab({ onNavigate }: HealthRecordsTabProps) {
                       icon={<Download className="w-4 h-4" />}
                       onClick={() => handleDownload(record._id, record.title)}
                     >
-                      Download
+                      {t('download')}
                     </Button>
                     <Button
                       variant="ghost"
@@ -207,7 +211,7 @@ export function HealthRecordsTab({ onNavigate }: HealthRecordsTabProps) {
                       icon={<Share2 className="w-4 h-4" />}
                       onClick={() => handleShare(record._id)}
                     >
-                      Share
+                      {t('share')}
                     </Button>
                     
                     {/* Consent Toggle */}
@@ -222,12 +226,12 @@ export function HealthRecordsTab({ onNavigate }: HealthRecordsTabProps) {
                       {record.consentEnabled ? (
                         <>
                           <Unlock className="w-3 h-3" />
-                          Shared
+                          {t('shared')}
                         </>
                       ) : (
                         <>
                           <Lock className="w-3 h-3" />
-                          Private
+                          {t('private')}
                         </>
                       )}
                     </button>
@@ -246,10 +250,10 @@ export function HealthRecordsTab({ onNavigate }: HealthRecordsTabProps) {
           <div className="text-2xl">🔗</div>
           <div>
             <h3 className="font-semibold text-[#0b6e4f] mb-1">
-              All records linked to your Health QR
+              {t('allRecordsLinked')}
             </h3>
             <p className="text-sm text-foreground">
-              Scan your QR code at any hospital to give doctors instant access to your shared medical history. You control what gets shared through consent toggles.
+              {t('qrLinkDesc')}
             </p>
           </div>
         </div>
@@ -261,17 +265,21 @@ export function HealthRecordsTab({ onNavigate }: HealthRecordsTabProps) {
         onOpenChange={(open) => !open && setSelectedRecord(null)}
         onDownload={handleDownload}
         onShare={handleShare}
+        t={t}
+        language={language}
       />
     </div>
   );
 }
 
-function RecordDetailsDialog({ record, open, onOpenChange, onDownload, onShare }: { 
+function RecordDetailsDialog({ record, open, onOpenChange, onDownload, onShare, t, language }: { 
   record: MedicalRecord | null, 
   open: boolean, 
   onOpenChange: (open: boolean) => void,
   onDownload: (id: string, title: string) => void,
-  onShare: (id: string) => void
+  onShare: (id: string) => void,
+  t: any,
+  language: string
 }) {
   if (!record) return null;
 
@@ -281,7 +289,7 @@ function RecordDetailsDialog({ record, open, onOpenChange, onDownload, onShare }
         <DialogHeader>
           <DialogTitle className="text-2xl font-bold">{record.title}</DialogTitle>
           <DialogDescription className="text-zinc-400">
-            {new Date(record.createdAt).toLocaleDateString('en-IN', {
+            {new Date(record.createdAt).toLocaleDateString(language === 'en' ? 'en-IN' : language, {
               year: 'numeric',
               month: 'long',
               day: 'numeric',
@@ -336,7 +344,7 @@ function RecordDetailsDialog({ record, open, onOpenChange, onDownload, onShare }
               {record.consentEnabled ? <Unlock className="w-4 h-4" /> : <Lock className="w-4 h-4" />}
             </div>
             <div>
-              <p className="text-xs font-semibold">{record.consentEnabled ? 'Publicly Shared' : 'Private Record'}</p>
+              <p className="text-xs font-semibold">{record.consentEnabled ? t('shared') : t('private')}</p>
               <p className="text-[10px] text-zinc-400">
                 {record.consentEnabled 
                   ? 'Authorized doctors can view this record when you scan your QR code.' 
@@ -354,7 +362,7 @@ function RecordDetailsDialog({ record, open, onOpenChange, onDownload, onShare }
               onClick={() => onDownload(record._id, record.title)}
             >
               <Download className="w-4 h-4 mr-2" />
-              Download
+              {t('download')}
             </Button>
             <Button
               variant="outline"
@@ -362,7 +370,7 @@ function RecordDetailsDialog({ record, open, onOpenChange, onDownload, onShare }
               onClick={() => onShare(record._id)}
             >
               <Share2 className="w-4 h-4 mr-2" />
-              Share
+              {t('share')}
             </Button>
           </div>
           <Button onClick={() => onOpenChange(false)} className="bg-[#0b6e4f] hover:bg-[#0b6e4f]/90 text-white">

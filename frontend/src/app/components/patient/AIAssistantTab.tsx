@@ -5,6 +5,8 @@ import { Card } from '@/app/components/ui/card';
 import { Button } from '@/app/components/ui/button';
 import { Input } from '@/app/components/ui/input';
 import { Badge } from '@/app/components/ui/badge';
+import { useTranslation } from '@/app/utils/translations';
+import { useLanguage } from '@/app/context/LanguageContext';
 
 interface Message {
   id: string;
@@ -14,6 +16,9 @@ interface Message {
 }
 
 export function AIAssistantTab() {
+  const { language } = useLanguage();
+  const { t } = useTranslation(language);
+
   const [messages, setMessages] = useState<Message[]>([
     {
       id: '1',
@@ -115,9 +120,9 @@ export function AIAssistantTab() {
             <Sparkles className="w-6 h-6 text-white" />
           </motion.div>
           <div>
-            <h2 className="text-xl font-bold text-foreground">AI Health Assistant</h2>
+            <h2 className="text-xl font-bold text-foreground">{t('aiHealthAssistant')}</h2>
             <p className="text-sm text-muted-foreground">
-              Multilingual • Voice-enabled • Available 24/7
+              {t('multilingualVoiceEnabled')}
             </p>
           </div>
         </div>
@@ -127,7 +132,7 @@ export function AIAssistantTab() {
       <div className="space-y-3">
         <h3 className="font-semibold text-foreground flex items-center gap-2">
           <Sparkles className="w-4 h-4 text-purple-500" />
-          AI Health Insights
+          {t('aiHealthInsights')}
         </h3>
         
         {healthInsights.map((insight, index) => (
@@ -164,7 +169,7 @@ export function AIAssistantTab() {
       <Card>
         <h3 className="font-semibold text-foreground mb-4 flex items-center gap-2">
           <MessageCircle className="w-4 h-4" />
-          Chat with AI Assistant
+          {t('chatWithAI')}
         </h3>
 
         {/* Messages */}
@@ -186,14 +191,14 @@ export function AIAssistantTab() {
                 {message.type === 'ai' && (
                   <Badge variant="ai" className="mb-2">
                     <Sparkles className="w-3 h-3" />
-                    AI Assistant
+                    {t('aiAssistant')}
                   </Badge>
                 )}
                 <p className="text-sm whitespace-pre-line">{message.content}</p>
                 <p className={`text-xs mt-1 ${
                   message.type === 'user' ? 'text-white/70' : 'text-muted-foreground'
                 }`}>
-                  {new Date(message.timestamp).toLocaleTimeString('en-IN', {
+                  {new Date(message.timestamp).toLocaleTimeString(language === 'en' ? 'en-IN' : language, {
                     hour: '2-digit',
                     minute: '2-digit',
                   })}
@@ -205,7 +210,7 @@ export function AIAssistantTab() {
 
         {/* Quick Actions */}
         <div className="mb-4">
-          <p className="text-xs text-muted-foreground mb-2">Quick actions:</p>
+          <p className="text-xs text-muted-foreground mb-2">{t('quickActions')}:</p>
           <div className="flex flex-wrap gap-2">
             {quickActions.map((action, index) => (
               <button
@@ -226,7 +231,7 @@ export function AIAssistantTab() {
           </button>
           <input
             type="text"
-            placeholder="Ask me anything about your health..."
+            placeholder={t('askAnything')}
             value={inputMessage}
             onChange={(e) => setInputMessage(e.target.value)}
             onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
@@ -237,7 +242,7 @@ export function AIAssistantTab() {
             onClick={handleSendMessage}
             icon={<Send className="w-5 h-5" />}
           >
-            Send
+            {t('continue')}
           </Button>
         </div>
       </Card>
@@ -248,13 +253,13 @@ export function AIAssistantTab() {
           <div className="text-2xl">🧒</div>
           <div>
             <h3 className="font-semibold text-foreground mb-1">
-              "Explain Like I'm 10" Mode
+              {t('explainLike10')}
             </h3>
             <p className="text-sm text-muted-foreground mb-3">
-              Don't understand medical terms? I can explain your reports in the simplest language possible, just like talking to a child.
+              {t('explainLike10Desc')}
             </p>
             <Button variant="outline" size="sm" icon={<Volume2 className="w-4 h-4" />}>
-              Try Voice Explanation
+              {t('tryVoiceExplanation')}
             </Button>
           </div>
         </div>

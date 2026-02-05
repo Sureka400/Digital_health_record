@@ -14,8 +14,12 @@ import {
   DialogFooter
 } from '@/app/components/ui/dialog';
 import { api } from '@/app/utils/api';
+import { useTranslation } from '@/app/utils/translations';
+import { useLanguage } from '@/app/context/LanguageContext';
 
 export function PatientHistoryTab() {
+  const { language } = useLanguage();
+  const { t } = useTranslation(language);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterType, setFilterType] = useState<string>('all');
   const [records, setRecords] = useState<any[]>([]);
@@ -40,10 +44,10 @@ export function PatientHistoryTab() {
   };
 
   const filters = [
-    { id: 'all', name: 'All Records', count: records.length },
-    { id: 'prescription', name: 'Prescriptions', count: records.filter(r => r.category === 'prescription').length },
-    { id: 'lab', name: 'Lab Reports', count: records.filter(r => r.category === 'lab').length },
-    { id: 'imaging', name: 'Imaging', count: records.filter(r => ['xray', 'imaging', 'mri'].includes(r.category)).length },
+    { id: 'all', name: t('allRecords'), count: records.length },
+    { id: 'prescription', name: t('prescriptions'), count: records.filter(r => r.category === 'prescription').length },
+    { id: 'lab', name: t('labReports'), count: records.filter(r => r.category === 'lab').length },
+    { id: 'imaging', name: t('imaging'), count: records.filter(r => ['xray', 'imaging', 'mri'].includes(r.category)).length },
   ];
 
   const filteredRecords = records.filter(r => {
@@ -67,8 +71,8 @@ export function PatientHistoryTab() {
       <Card>
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h2 className="text-2xl font-bold text-foreground">Patient: Rajesh Kumar</h2>
-            <p className="text-sm text-muted-foreground">ID: KL-MW-2025-12345</p>
+            <h2 className="text-2xl font-bold text-foreground">Rajesh Kumar</h2>
+            <p className="text-sm text-muted-foreground">{t('id')}: KL-MW-2025-12345</p>
           </div>
           <Badge variant="success">Active</Badge>
         </div>
@@ -77,13 +81,13 @@ export function PatientHistoryTab() {
         <div className="space-y-3">
           <Input
             type="text"
-            placeholder="Search medical records..."
+            placeholder={t('searchRecordsPlaceholder')}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             icon={<Search className="w-5 h-5" />}
           />
 
-          <div className="flex gap-2 overflow-x-auto">
+          <div className="flex gap-2 overflow-x-auto no-scrollbar pb-2">
             {filters.map((filter) => (
               <button
                 key={filter.id}
@@ -106,9 +110,9 @@ export function PatientHistoryTab() {
         <div className="flex items-start gap-3">
           <div className="text-2xl">🌍</div>
           <div>
-            <h3 className="font-semibold text-foreground mb-1">Cross-State Records Available</h3>
+            <h3 className="font-semibold text-foreground mb-1">{t('crossStateRecords')}</h3>
             <p className="text-sm text-muted-foreground">
-              This patient's records from other states are accessible through the unified health network.
+              {t('crossStateRecordsDesc')}
             </p>
           </div>
         </div>
@@ -118,24 +122,24 @@ export function PatientHistoryTab() {
       <div className="space-y-4">
         <h3 className="font-semibold text-foreground flex items-center gap-2">
           <Calendar className="w-5 h-5" />
-          Medical History Timeline
+          {t('medicalHistoryTimeline')}
         </h3>
 
         {loading ? (
           <div className="flex flex-col items-center justify-center py-12">
             <Loader2 className="w-8 h-8 text-[#0b6e4f] animate-spin mb-4" />
-            <p className="text-muted-foreground">Loading medical records...</p>
+            <p className="text-muted-foreground">{t('loadingRecords')}</p>
           </div>
         ) : error ? (
           <div className="p-6 text-center bg-red-900/20 border border-red-900/50 rounded-xl">
             <p className="text-red-400 mb-4">{error}</p>
-            <Button onClick={fetchRecords} variant="outline">Retry</Button>
+            <Button onClick={fetchRecords} variant="outline">{t('retry')}</Button>
           </div>
         ) : filteredRecords.length === 0 ? (
           <div className="text-center py-12 bg-zinc-900/50 rounded-xl border border-zinc-800">
             <FileText className="w-12 h-12 text-zinc-700 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-foreground">No records found</h3>
-            <p className="text-muted-foreground mt-1">Search or filter criteria matched no records.</p>
+            <h3 className="text-lg font-medium text-foreground">{t('noRecordsFound')}</h3>
+            <p className="text-muted-foreground mt-1">{t('noRecordsMatch')}</p>
           </div>
         ) : (
           filteredRecords.map((record, index) => (
@@ -165,7 +169,7 @@ export function PatientHistoryTab() {
                         <p className="text-sm text-muted-foreground uppercase">{record.category}</p>
                       </div>
                       <Badge variant="info">
-                        {new Date(record.createdAt).toLocaleDateString('en-IN')}
+                        {new Date(record.createdAt).toLocaleDateString(language)}
                       </Badge>
                     </div>
 
@@ -176,7 +180,7 @@ export function PatientHistoryTab() {
 
                     {record.description && (
                       <div className="p-3 bg-accent rounded-lg mb-3">
-                        <p className="text-xs font-medium text-muted-foreground mb-1">Details:</p>
+                        <p className="text-xs font-medium text-muted-foreground mb-1">{t('details')}:</p>
                         <p className="text-sm text-foreground">{record.description}</p>
                       </div>
                     )}
@@ -189,7 +193,7 @@ export function PatientHistoryTab() {
                         icon={<Eye className="w-4 h-4" />}
                         onClick={() => setSelectedRecord(record)}
                       >
-                        View Full
+                        {t('viewFull')}
                       </Button>
                       <Button 
                         variant="ghost" 
@@ -197,7 +201,7 @@ export function PatientHistoryTab() {
                         icon={<Download className="w-4 h-4" />}
                         onClick={() => handleDownload(record._id, record.title)}
                       >
-                        Download
+                        {t('download')}
                       </Button>
                     </div>
                   </div>
@@ -213,27 +217,29 @@ export function PatientHistoryTab() {
         open={!!selectedRecord} 
         onOpenChange={(open) => !open && setSelectedRecord(null)}
         onDownload={handleDownload}
+        language={language}
+        t={t}
       />
 
       {/* Patient Summary */}
       <Card className="bg-[#e8f5e9] border-[#0b6e4f]">
-        <h3 className="font-semibold text-foreground mb-3">Patient Summary</h3>
+        <h3 className="font-semibold text-foreground mb-3">{t('patientSummary')}</h3>
         <div className="grid grid-cols-2 gap-3 text-sm">
           <div>
-            <p className="text-muted-foreground">Total Visits</p>
+            <p className="text-muted-foreground">{t('totalVisits')}</p>
             <p className="text-lg font-bold text-foreground">12</p>
           </div>
           <div>
-            <p className="text-muted-foreground">Total Records</p>
+            <p className="text-muted-foreground">{t('totalRecords')}</p>
             <p className="text-lg font-bold text-foreground">24</p>
           </div>
           <div>
-            <p className="text-muted-foreground">First Visit</p>
-            <p className="text-lg font-bold text-foreground">Jan 2024</p>
+            <p className="text-muted-foreground">{t('firstVisit')}</p>
+            <p className="text-lg font-bold text-foreground">{new Date('2024-01-01').toLocaleDateString(language, { month: 'short', year: 'numeric' })}</p>
           </div>
           <div>
-            <p className="text-muted-foreground">Last Visit</p>
-            <p className="text-lg font-bold text-foreground">Jan 2025</p>
+            <p className="text-muted-foreground">{t('lastVisit')}</p>
+            <p className="text-lg font-bold text-foreground">{new Date('2025-01-01').toLocaleDateString(language, { month: 'short', year: 'numeric' })}</p>
           </div>
         </div>
       </Card>
@@ -241,11 +247,13 @@ export function PatientHistoryTab() {
   );
 }
 
-function RecordDetailsDialog({ record, open, onOpenChange, onDownload }: { 
+function RecordDetailsDialog({ record, open, onOpenChange, onDownload, language, t }: { 
   record: any | null, 
   open: boolean, 
   onOpenChange: (open: boolean) => void,
-  onDownload: (id: string, title: string) => void
+  onDownload: (id: string, title: string) => void,
+  language: string,
+  t: any
 }) {
   if (!record) return null;
 
@@ -255,7 +263,7 @@ function RecordDetailsDialog({ record, open, onOpenChange, onDownload }: {
         <DialogHeader>
           <DialogTitle className="text-2xl font-bold">{record.title}</DialogTitle>
           <DialogDescription className="text-zinc-400">
-            {new Date(record.createdAt).toLocaleDateString('en-IN', {
+            {new Date(record.createdAt).toLocaleDateString(language, {
               year: 'numeric',
               month: 'long',
               day: 'numeric',
@@ -266,17 +274,17 @@ function RecordDetailsDialog({ record, open, onOpenChange, onDownload }: {
         <div className="grid gap-6 py-4 text-white">
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1">
-              <p className="text-xs text-zinc-500 uppercase font-semibold">Hospital</p>
+              <p className="text-xs text-zinc-500 uppercase font-semibold">{t('hospital')}</p>
               <p className="text-sm">{record.hospital || 'Not specified'}</p>
             </div>
             <div className="space-y-1">
-              <p className="text-xs text-zinc-500 uppercase font-semibold">Doctor</p>
+              <p className="text-xs text-zinc-500 uppercase font-semibold">{t('doctor')}</p>
               <p className="text-sm">{record.doctor || 'Not specified'}</p>
             </div>
           </div>
 
           <div className="space-y-2">
-            <p className="text-xs text-zinc-500 uppercase font-semibold">Description</p>
+            <p className="text-xs text-zinc-500 uppercase font-semibold">{t('description')}</p>
             <p className="text-sm text-zinc-300 bg-zinc-900/50 p-3 rounded-lg border border-zinc-800">
               {record.description || 'No additional description provided for this record.'}
             </p>
@@ -284,7 +292,7 @@ function RecordDetailsDialog({ record, open, onOpenChange, onDownload }: {
 
           {record.fileUrl && (
             <div className="space-y-2">
-              <p className="text-xs text-zinc-500 uppercase font-semibold">Document Preview</p>
+              <p className="text-xs text-zinc-500 uppercase font-semibold">{t('documentPreview')}</p>
               <div className="aspect-video bg-zinc-900 rounded-lg border border-zinc-800 flex items-center justify-center overflow-hidden">
                 {record.fileUrl.endsWith('.pdf') ? (
                   <div className="text-center p-4">
@@ -314,11 +322,11 @@ function RecordDetailsDialog({ record, open, onOpenChange, onDownload }: {
               onClick={() => onDownload(record._id, record.title)}
             >
               <Download className="w-4 h-4 mr-2" />
-              Download
+              {t('download')}
             </Button>
           </div>
           <Button onClick={() => onOpenChange(false)} className="bg-[#0b6e4f] hover:bg-[#0b6e4f]/90 text-white">
-            Close
+            {t('close')}
           </Button>
         </DialogFooter>
       </DialogContent>

@@ -4,6 +4,8 @@ import { Gift, CheckCircle, ExternalLink, Sparkles } from 'lucide-react';
 import { Card } from '@/app/components/ui/card';
 import { Button } from '@/app/components/ui/button';
 import { Badge } from '@/app/components/ui/badge';
+import { useTranslation } from '@/app/utils/translations';
+import { useLanguage } from '@/app/context/LanguageContext';
 
 interface Scheme {
   id: string;
@@ -17,6 +19,9 @@ interface Scheme {
 }
 
 export function SchemesTab() {
+  const { language } = useLanguage();
+  const { t } = useTranslation(language);
+
   const schemes: Scheme[] = [
     {
       id: '1',
@@ -85,12 +90,12 @@ export function SchemesTab() {
       <Card className="bg-gradient-to-r from-[#0b6e4f] to-[#2196F3] text-white">
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-2xl font-bold mb-1">Government Schemes & Benefits</h2>
-            <p className="text-white/90">Personalized for your health profile</p>
+            <h2 className="text-2xl font-bold mb-1">{t('govtSchemes')}</h2>
+            <p className="text-white/90">{t('personalizedHealthProfile')}</p>
           </div>
           <div className="text-center">
             <div className="text-3xl font-bold">{eligibleSchemes.length}</div>
-            <div className="text-sm text-white/90">Eligible</div>
+            <div className="text-sm text-white/90">{t('eligible')}</div>
           </div>
         </div>
       </Card>
@@ -107,10 +112,10 @@ export function SchemesTab() {
           </motion.div>
           <div>
             <h3 className="font-semibold text-foreground mb-1 flex items-center gap-2">
-              AI-Powered Eligibility Detection
+              {t('aiEligibilityDetection')}
             </h3>
             <p className="text-sm text-muted-foreground">
-              Based on your health records, location, and profile, our AI has automatically identified {eligibleSchemes.length} schemes you're eligible for.
+              {t('aiEligibilityDesc')}
             </p>
           </div>
         </div>
@@ -121,7 +126,7 @@ export function SchemesTab() {
         <div>
           <h3 className="font-semibold text-foreground mb-3 flex items-center gap-2">
             <CheckCircle className="w-5 h-5 text-green-600" />
-            Active Schemes
+            {t('activeSchemes')}
           </h3>
           <div className="space-y-3">
             {appliedSchemes.map((scheme, index) => (
@@ -144,7 +149,7 @@ export function SchemesTab() {
                   </div>
                   <p className="text-sm text-muted-foreground mb-3">{scheme.description}</p>
                   <Button variant="outline" size="sm" icon={<ExternalLink className="w-4 h-4" />}>
-                    View Details
+                    {t('viewDetails')}
                   </Button>
                 </Card>
               </motion.div>
@@ -157,7 +162,7 @@ export function SchemesTab() {
       <div>
         <h3 className="font-semibold text-foreground mb-3 flex items-center gap-2">
           <Gift className="w-5 h-5 text-[#0b6e4f]" />
-          Available Schemes
+          {t('availableSchemes')}
         </h3>
         <div className="space-y-3">
           {schemes
@@ -187,7 +192,7 @@ export function SchemesTab() {
 
                   {/* Benefits */}
                   <div className="mb-4">
-                    <p className="text-xs font-medium text-muted-foreground mb-2">Key Benefits:</p>
+                    <p className="text-xs font-medium text-muted-foreground mb-2">{t('keyBenefits')}:</p>
                     <ul className="space-y-1">
                       {scheme.benefits.map((benefit, i) => (
                         <li key={i} className="text-sm text-foreground flex items-start gap-2">
@@ -200,13 +205,13 @@ export function SchemesTab() {
 
                   {/* Eligibility */}
                   <div className="p-3 bg-accent rounded-lg mb-4">
-                    <p className="text-xs font-medium text-muted-foreground mb-1">Eligibility:</p>
+                    <p className="text-xs font-medium text-muted-foreground mb-1">{t('eligibility')}:</p>
                     <p className="text-sm text-foreground">{scheme.eligibility}</p>
                   </div>
 
                   {/* Apply Button */}
                   <Button variant="primary" fullWidth icon={<ExternalLink className="w-4 h-4" />}>
-                    Apply Now
+                    {t('applyNow')}
                   </Button>
                 </Card>
               </motion.div>
@@ -216,7 +221,7 @@ export function SchemesTab() {
 
       {/* Other Schemes */}
       <div>
-        <h3 className="font-semibold text-foreground mb-3">Other Schemes</h3>
+        <h3 className="font-semibold text-foreground mb-3">{t('otherSchemes')}</h3>
         <div className="space-y-3">
           {schemes
             .filter(s => !s.eligible)
@@ -248,12 +253,12 @@ export function SchemesTab() {
         <div className="flex items-start gap-3">
           <div className="text-2xl">💡</div>
           <div>
-            <h3 className="font-semibold text-foreground mb-1">Need Help?</h3>
+            <h3 className="font-semibold text-foreground mb-1">{t('needHelp')}</h3>
             <p className="text-sm text-muted-foreground mb-3">
-              Our AI assistant can help you understand each scheme in simple language and guide you through the application process.
+              {t('schemeHelpDesc')}
             </p>
             <Button variant="outline" size="sm">
-              Talk to AI Assistant
+              {t('chatWithAI')}
             </Button>
           </div>
         </div>

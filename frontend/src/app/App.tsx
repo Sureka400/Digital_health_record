@@ -1,28 +1,21 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { LanguageSelectionScreen } from '@/app/components/screens/LanguageSelectionScreen';
 import { LoginScreen } from '@/app/components/screens/LoginScreen';
 import { PatientDashboard } from '@/app/components/dashboards/PatientDashboard';
 import { DoctorDashboard } from '@/app/components/dashboards/DoctorDashboard';
 import { AdminDashboard } from '@/app/components/dashboards/AdminDashboard';
+import { useLanguage } from '@/app/context/LanguageContext';
 
 type AppScreen = 'language' | 'login' | 'dashboard';
 type UserRole = 'patient' | 'doctor' | 'admin' | null;
 
 export default function App() {
   const [currentScreen, setCurrentScreen] = useState<AppScreen>('language');
-  const [selectedLanguage, setSelectedLanguage] = useState<string>('en');
+  const { language, setLanguage } = useLanguage();
   const [userRole, setUserRole] = useState<UserRole>(null);
 
-  useEffect(() => {
-    const handleLangChange = (e: any) => {
-      setSelectedLanguage(e.detail);
-    };
-    window.addEventListener('change-language', handleLangChange);
-    return () => window.removeEventListener('change-language', handleLangChange);
-  }, []);
-
-  const handleLanguageSelect = (language: string) => {
-    setSelectedLanguage(language);
+  const handleLanguageSelect = (lang: string) => {
+    setLanguage(lang);
     setCurrentScreen('login');
   };
 
@@ -34,7 +27,7 @@ export default function App() {
   const handleLogout = () => {
     setUserRole(null);
     setCurrentScreen('language');
-    setSelectedLanguage('en');
+    setLanguage('en');
   };
 
   return (
@@ -46,20 +39,20 @@ export default function App() {
 
       {/* Login Screen */}
       {currentScreen === 'login' && (
-        <LoginScreen onLogin={handleLogin} language={selectedLanguage} />
+        <LoginScreen onLogin={handleLogin} language={language} />
       )}
 
       {/* Dashboard - Role-based rendering */}
       {currentScreen === 'dashboard' && userRole === 'patient' && (
-        <PatientDashboard onLogout={handleLogout} language={selectedLanguage} />
+        <PatientDashboard onLogout={handleLogout} language={language} />
       )}
 
       {currentScreen === 'dashboard' && userRole === 'doctor' && (
-        <DoctorDashboard onLogout={handleLogout} language={selectedLanguage} />
+        <DoctorDashboard onLogout={handleLogout} language={language} />
       )}
 
       {currentScreen === 'dashboard' && userRole === 'admin' && (
-        <AdminDashboard onLogout={handleLogout} language={selectedLanguage} />
+        <AdminDashboard onLogout={handleLogout} language={language} />
       )}
     </div>
   );

@@ -4,12 +4,16 @@ import { QrCode, Camera, AlertTriangle, Heart, Activity } from 'lucide-react';
 import { Card } from '@/app/components/ui/card';
 import { Button } from '@/app/components/ui/button';
 import { Badge } from '@/app/components/ui/badge';
+import { useTranslation } from '@/app/utils/translations';
+import { useLanguage } from '@/app/context/LanguageContext';
 
 interface ScanQRTabProps {
   onNavigate?: (tabId: string) => void;
 }
 
 export function ScanQRTab({ onNavigate }: ScanQRTabProps) {
+  const { language } = useLanguage();
+  const { t } = useTranslation(language);
   const [isScanning, setIsScanning] = useState(false);
   const [scannedPatient, setScannedPatient] = useState<any>(null);
 
@@ -38,10 +42,10 @@ export function ScanQRTab({ onNavigate }: ScanQRTabProps) {
       {/* Scanner Card */}
       <Card className="text-center">
         <h2 className="text-2xl font-bold text-foreground mb-4">
-          Scan Patient QR Code
+          {t('scanPatientQRTitle')}
         </h2>
         <p className="text-sm text-muted-foreground mb-6">
-          Scan the patient's health QR code for instant access to their medical records
+          {t('scanPatientQRDesc')}
         </p>
 
         {!scannedPatient ? (
@@ -78,11 +82,11 @@ export function ScanQRTab({ onNavigate }: ScanQRTabProps) {
               disabled={isScanning}
               icon={<Camera className="w-5 h-5" />}
             >
-              {isScanning ? 'Scanning...' : 'Open Camera to Scan'}
+              {isScanning ? t('scanning') : t('openCamera')}
             </Button>
 
             <p className="text-xs text-muted-foreground">
-              Or enter patient ID manually
+              {t('enterIdManually')}
             </p>
           </div>
         ) : (
@@ -91,9 +95,9 @@ export function ScanQRTab({ onNavigate }: ScanQRTabProps) {
             animate={{ opacity: 1, scale: 1 }}
           >
             <div className="text-green-600 text-6xl mb-4">✓</div>
-            <h3 className="text-xl font-bold text-foreground mb-2">Patient Identified</h3>
+            <h3 className="text-xl font-bold text-foreground mb-2">{t('patientIdentified')}</h3>
             <Button variant="outline" onClick={() => setScannedPatient(null)}>
-              Scan Another Patient
+              {t('scanAnotherPatient')}
             </Button>
           </motion.div>
         )}
@@ -115,13 +119,13 @@ export function ScanQRTab({ onNavigate }: ScanQRTabProps) {
               <div className="flex-1">
                 <h3 className="text-2xl font-bold text-foreground mb-1">{scannedPatient.name}</h3>
                 <div className="flex flex-wrap gap-3 text-sm text-muted-foreground mb-3">
-                  <span>👤 {scannedPatient.age} years, {scannedPatient.gender}</span>
+                  <span>👤 {scannedPatient.age} {t('years')}, {scannedPatient.gender}</span>
                   <span>🆔 {scannedPatient.id}</span>
                   <span className="text-red-600 font-semibold">🩸 {scannedPatient.bloodGroup}</span>
                 </div>
                 <div className="flex flex-wrap gap-2">
-                  <Badge variant="info">Active Patient</Badge>
-                  <Badge variant="default">Last visit: {scannedPatient.lastVisit}</Badge>
+                  <Badge variant="info">{t('activePatient')}</Badge>
+                  <Badge variant="default">{t('lastVisit')}: {new Date(scannedPatient.lastVisit).toLocaleDateString(language)}</Badge>
                 </div>
               </div>
             </div>
@@ -132,35 +136,35 @@ export function ScanQRTab({ onNavigate }: ScanQRTabProps) {
             <div className="flex items-start gap-3 mb-4">
               <AlertTriangle className="w-6 h-6 text-red-600 flex-shrink-0" />
               <div>
-                <h3 className="font-bold text-red-800 mb-1">⚠️ Critical Alerts</h3>
+                <h3 className="font-bold text-red-800 mb-1">⚠️ {t('criticalAlerts')}</h3>
                 <p className="text-sm text-red-700">
-                  Review carefully before prescribing medication
+                  {t('reviewCarefully')}
                 </p>
               </div>
             </div>
 
             <div className="space-y-2">
-              <div className="p-3 bg-zinc-800/50 backdrop-blur-sm rounded-lg border border-zinc-700">
+              <div className="p-3 bg-white/50 backdrop-blur-sm rounded-lg border border-red-100">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="font-semibold text-red-800">Drug Allergies</p>
+                    <p className="font-semibold text-red-800">{t('drugAllergies')}</p>
                     <p className="text-sm text-red-600">
                       {scannedPatient.allergies.join(', ')}
                     </p>
                   </div>
-                  <Badge variant="danger">High Risk</Badge>
+                  <Badge variant="danger">{t('highRisk')}</Badge>
                 </div>
               </div>
 
-              <div className="p-3 bg-zinc-800/50 backdrop-blur-sm rounded-lg border border-zinc-700">
+              <div className="p-3 bg-white/50 backdrop-blur-sm rounded-lg border border-orange-100">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="font-semibold text-orange-800">Chronic Conditions</p>
+                    <p className="font-semibold text-orange-800">{t('chronicConditions')}</p>
                     <p className="text-sm text-orange-600">
                       {scannedPatient.chronicConditions.join(', ')}
                     </p>
                   </div>
-                  <Badge variant="warning">Monitor</Badge>
+                  <Badge variant="warning">{t('monitor')}</Badge>
                 </div>
               </div>
             </div>
@@ -174,7 +178,7 @@ export function ScanQRTab({ onNavigate }: ScanQRTabProps) {
                   <Heart className="w-6 h-6 text-blue-600" />
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground">Total Visits</p>
+                  <p className="text-sm text-muted-foreground">{t('totalVisits')}</p>
                   <p className="text-2xl font-bold text-foreground">12</p>
                 </div>
               </div>
@@ -186,7 +190,7 @@ export function ScanQRTab({ onNavigate }: ScanQRTabProps) {
                   <Activity className="w-6 h-6 text-green-600" />
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground">Medical Records</p>
+                  <p className="text-sm text-muted-foreground">{t('healthRecords')}</p>
                   <p className="text-2xl font-bold text-foreground">24</p>
                 </div>
               </div>
@@ -200,14 +204,14 @@ export function ScanQRTab({ onNavigate }: ScanQRTabProps) {
               fullWidth
               onClick={() => onNavigate && onNavigate('history')}
             >
-              View Full History
+              {t('viewFullHistory')}
             </Button>
             <Button 
               variant="secondary" 
               fullWidth
               onClick={() => onNavigate && onNavigate('upload')}
             >
-              Start Consultation
+              {t('startConsultation')}
             </Button>
           </div>
         </motion.div>
@@ -219,9 +223,9 @@ export function ScanQRTab({ onNavigate }: ScanQRTabProps) {
           <div className="flex items-start gap-3">
             <div className="text-2xl">💡</div>
             <div>
-              <h3 className="font-semibold text-foreground mb-1">Quick & Secure Access</h3>
+              <h3 className="font-semibold text-foreground mb-1">{t('quickSecureAccess')}</h3>
               <p className="text-sm text-muted-foreground">
-                The QR code provides instant access to patient records while maintaining privacy and security. All accesses are logged and require patient consent.
+                {t('qrPrivacyDesc')}
               </p>
             </div>
           </div>

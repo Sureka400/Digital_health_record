@@ -6,8 +6,12 @@ import { Button } from '@/app/components/ui/button';
 import { Input } from '@/app/components/ui/input';
 import { Badge } from '@/app/components/ui/badge';
 import { api } from '@/app/utils/api';
+import { useTranslation } from '@/app/utils/translations';
+import { useLanguage } from '@/app/context/LanguageContext';
 
 export function UploadRecordsTab() {
+  const { language } = useLanguage();
+  const { t } = useTranslation(language);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [patientId, setPatientId] = useState('6981fe42f8fab946afe86511');
   const [recordType, setRecordType] = useState('prescription');
@@ -20,10 +24,10 @@ export function UploadRecordsTab() {
   const [error, setError] = useState<string | null>(null);
 
   const recordTypes = [
-    { id: 'prescription', name: 'Prescription', icon: '💊' },
-    { id: 'lab', name: 'Lab Report', icon: '🧪' },
-    { id: 'imaging', name: 'X-Ray/Scan', icon: '🩻' },
-    { id: 'notes', name: 'Clinical Notes', icon: '📝' },
+    { id: 'prescription', name: t('prescription'), icon: '💊' },
+    { id: 'lab', name: t('labReport'), icon: '🧪' },
+    { id: 'imaging', name: t('xrayScan'), icon: '🩻' },
+    { id: 'notes', name: t('clinicalNotes'), icon: '📝' },
   ];
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -65,19 +69,19 @@ export function UploadRecordsTab() {
       {/* Header */}
       <Card>
         <h2 className="text-2xl font-bold text-foreground mb-2">
-          Upload Medical Records
+          {t('uploadRecordsTitle')}
         </h2>
         <p className="text-sm text-muted-foreground">
-          Add prescriptions, scans, and notes to patient records
+          {t('uploadRecordsDesc')}
         </p>
       </Card>
 
       {/* Patient Selection */}
       <Card>
-        <h3 className="font-semibold text-foreground mb-3">Select Patient</h3>
+        <h3 className="font-semibold text-foreground mb-3">{t('selectPatient')}</h3>
         <Input
           type="text"
-          placeholder="Enter Patient ID or scan QR code"
+          placeholder={t('patientIdPlaceholder')}
           icon={<FileText className="w-5 h-5" />}
           value={patientId}
           onChange={(e) => setPatientId(e.target.value)}
@@ -86,18 +90,18 @@ export function UploadRecordsTab() {
           <div className="flex items-center justify-between">
             <div>
               <p className="font-semibold text-foreground">
-                {patientId === '6981fe42f8fab946afe86511' ? 'John Doe' : 'Unknown Patient'}
+                {patientId === '6981fe42f8fab946afe86511' ? 'John Doe' : t('unknownPatient')}
               </p>
-              <p className="text-sm text-muted-foreground">ID: {patientId}</p>
+              <p className="text-sm text-muted-foreground">{t('id')}: {patientId}</p>
             </div>
-            <Badge variant="success">Selected</Badge>
+            <Badge variant="success">{t('eligible')}</Badge>
           </div>
         </div>
       </Card>
 
       {/* Record Type Selection */}
       <Card>
-        <h3 className="font-semibold text-foreground mb-3">Record Type</h3>
+        <h3 className="font-semibold text-foreground mb-3">{t('recordType')}</h3>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           {recordTypes.map((type) => (
             <button
@@ -118,7 +122,7 @@ export function UploadRecordsTab() {
 
       {/* Upload Area */}
       <Card>
-        <h3 className="font-semibold text-foreground mb-3">Upload Document</h3>
+        <h3 className="font-semibold text-foreground mb-3">{t('uploadDocument')}</h3>
         
         {!selectedFile ? (
           <div className="space-y-4">
@@ -129,10 +133,10 @@ export function UploadRecordsTab() {
             >
               <Upload className="w-16 h-16 mx-auto text-muted-foreground mb-4" />
               <p className="font-semibold text-foreground mb-1">
-                Drop files here or click to upload
+                {t('dropFilesDesc')}
               </p>
               <p className="text-sm text-muted-foreground">
-                Supports PDF, JPG, PNG up to 10MB
+                {t('uploadFormatsDesc')}
               </p>
               <input
                 id="file-upload"
@@ -146,7 +150,7 @@ export function UploadRecordsTab() {
             <div className="text-center">
               <p className="text-sm text-muted-foreground mb-3">Or</p>
               <Button variant="outline" icon={<Camera className="w-4 h-4" />}>
-                Take Photo
+                {t('takePhoto')}
               </Button>
             </div>
           </div>
@@ -182,10 +186,10 @@ export function UploadRecordsTab() {
                     <Sparkles className="w-5 h-5 text-purple-600 flex-shrink-0 mt-0.5" />
                     <div>
                       <p className="font-semibold text-sm text-foreground mb-1">
-                        AI Auto-Tagging
+                        {t('aiAutoTagging')}
                       </p>
                       <p className="text-xs text-muted-foreground">
-                        Document analyzed and tagged automatically
+                        {t('aiAutoTaggingDesc')}
                       </p>
                     </div>
                   </div>
@@ -195,29 +199,29 @@ export function UploadRecordsTab() {
                 <div className="space-y-3">
                   <Input
                     type="text"
-                    placeholder="Record Title"
-                    label="Title"
+                    placeholder={t('recordTitle')}
+                    label={t('title')}
                     value={title}
                     onChange={(e) => setTitle(e.target.value)}
                   />
                   <Input
                     type="text"
-                    placeholder="Add notes or description..."
-                    label="Notes (Optional)"
+                    placeholder={t('askAnything')}
+                    label={t('notesOptional')}
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
                   />
                   <Input
                     type="text"
-                    placeholder="Hospital Name"
-                    label="Hospital"
+                    placeholder={t('hospitalName')}
+                    label={t('hospital')}
                     value={hospital}
                     onChange={(e) => setHospital(e.target.value)}
                   />
                   <Input
                     type="text"
-                    placeholder="Doctor Name"
-                    label="Doctor"
+                    placeholder={t('doctorName')}
+                    label={t('doctor')}
                     value={doctor}
                     onChange={(e) => setDoctor(e.target.value)}
                   />
@@ -235,7 +239,7 @@ export function UploadRecordsTab() {
                     icon={uploading ? undefined : <Upload className="w-5 h-5" />}
                     className="mt-4"
                   >
-                    {uploading ? 'Uploading...' : 'Upload & Link to Patient'}
+                    {uploading ? t('processing') : t('uploadAndLink')}
                   </Button>
                 </div>
               </motion.div>
@@ -249,10 +253,10 @@ export function UploadRecordsTab() {
                   <Check className="w-10 h-10 text-green-600" />
                 </div>
                 <h3 className="text-xl font-bold text-foreground mb-2">
-                  Upload Successful!
+                  {t('uploadSuccessful')}
                 </h3>
                 <p className="text-sm text-muted-foreground">
-                  Record has been added to patient's health history
+                  {t('uploadSuccessfulDesc')}
                 </p>
               </motion.div>
             )}
@@ -267,12 +271,12 @@ export function UploadRecordsTab() {
             <Sparkles className="w-6 h-6 text-white" />
           </div>
           <div>
-            <h3 className="font-semibold text-foreground mb-1">AI-Powered Features</h3>
+            <h3 className="font-semibold text-foreground mb-1">{t('aiPoweredFeatures')}</h3>
             <ul className="text-sm text-muted-foreground space-y-1">
-              <li>✓ Automatic document classification</li>
-              <li>✓ Text extraction from images</li>
-              <li>✓ Multi-language support & auto-translation</li>
-              <li>✓ Smart tagging and indexing</li>
+              <li>✓ {t('autoClassification')}</li>
+              <li>✓ {t('textExtraction')}</li>
+              <li>✓ {t('multiLangSupport')}</li>
+              <li>✓ {t('smartTagging')}</li>
             </ul>
           </div>
         </div>
@@ -280,11 +284,11 @@ export function UploadRecordsTab() {
 
       {/* Recent Uploads */}
       <Card>
-        <h3 className="font-semibold text-foreground mb-3">Recent Uploads</h3>
+        <h3 className="font-semibold text-foreground mb-3">{t('recentUploads')}</h3>
         <div className="space-y-2">
           {[
-            { name: 'Blood Test Report', date: '2 hours ago', type: 'Lab Report' },
-            { name: 'Prescription - Diabetes', date: 'Yesterday', type: 'Prescription' },
+            { name: 'Blood Test Report', date: '2 hours ago', type: t('labReport') },
+            { name: 'Prescription - Diabetes', date: 'Yesterday', type: t('prescription') },
           ].map((item, index) => (
             <div
               key={index}

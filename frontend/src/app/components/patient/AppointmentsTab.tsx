@@ -4,6 +4,8 @@ import { Calendar, Clock, MapPin, Video, User } from 'lucide-react';
 import { Card } from '@/app/components/ui/card';
 import { Button } from '@/app/components/ui/button';
 import { Badge } from '@/app/components/ui/badge';
+import { useTranslation } from '@/app/utils/translations';
+import { useLanguage } from '@/app/context/LanguageContext';
 
 interface Appointment {
   id: string;
@@ -17,6 +19,9 @@ interface Appointment {
 }
 
 export function AppointmentsTab() {
+  const { language } = useLanguage();
+  const { t } = useTranslation(language);
+
   const appointments: Appointment[] = [
     {
       id: '1',
@@ -59,20 +64,20 @@ export function AppointmentsTab() {
       <Card>
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-xl font-bold text-foreground mb-1">My Appointments</h2>
+            <h2 className="text-xl font-bold text-foreground mb-1">{t('myAppointments')}</h2>
             <p className="text-sm text-muted-foreground">
-              {upcomingAppointments.length} upcoming appointments
+              {upcomingAppointments.length} {t('upcomingAppointments')}
             </p>
           </div>
           <Button variant="primary" icon={<Calendar className="w-4 h-4" />}>
-            Book New
+            {t('bookNew')}
           </Button>
         </div>
       </Card>
 
       {/* Upcoming Appointments */}
       <div>
-        <h3 className="font-semibold text-foreground mb-3">Upcoming</h3>
+        <h3 className="font-semibold text-foreground mb-3">{t('upcoming')}</h3>
         <div className="space-y-3">
           {upcomingAppointments.map((appointment, index) => (
             <motion.div
@@ -89,7 +94,7 @@ export function AppointmentsTab() {
                       {new Date(appointment.date).getDate()}
                     </div>
                     <div className="text-xs">
-                      {new Date(appointment.date).toLocaleDateString('en-IN', { month: 'short' })}
+                      {new Date(appointment.date).toLocaleDateString(language === 'en' ? 'en-IN' : language, { month: 'short' })}
                     </div>
                   </div>
 
@@ -124,13 +129,13 @@ export function AppointmentsTab() {
                     {/* Actions */}
                     <div className="flex gap-2">
                       <Button variant="primary" size="sm">
-                        {appointment.type === 'video' ? 'Join Video Call' : 'View Details'}
+                        {appointment.type === 'video' ? t('joinVideoCall') : t('viewDetails')}
                       </Button>
                       <Button variant="outline" size="sm">
-                        Reschedule
+                        {t('reschedule')}
                       </Button>
                       <Button variant="ghost" size="sm">
-                        Cancel
+                        {t('cancel')}
                       </Button>
                     </div>
                   </div>
@@ -146,9 +151,9 @@ export function AppointmentsTab() {
         <div className="flex items-start gap-3">
           <div className="text-2xl">🔔</div>
           <div>
-            <h3 className="font-semibold text-foreground mb-1">Smart Reminders Active</h3>
+            <h3 className="font-semibold text-foreground mb-1">{t('smartReminders')}</h3>
             <p className="text-sm text-muted-foreground">
-              You'll receive notifications 24 hours and 1 hour before each appointment via SMS and app notification.
+              {t('smartRemindersDesc')}
             </p>
           </div>
         </div>
@@ -156,7 +161,7 @@ export function AppointmentsTab() {
 
       {/* Past Appointments */}
       <div>
-        <h3 className="font-semibold text-foreground mb-3">Past Appointments</h3>
+        <h3 className="font-semibold text-foreground mb-3">{t('past')}</h3>
         <div className="space-y-3">
           {pastAppointments.map((appointment, index) => (
             <motion.div
@@ -173,7 +178,7 @@ export function AppointmentsTab() {
                       {new Date(appointment.date).getDate()}
                     </div>
                     <div className="text-xs">
-                      {new Date(appointment.date).toLocaleDateString('en-IN', { month: 'short' })}
+                      {new Date(appointment.date).toLocaleDateString(language === 'en' ? 'en-IN' : language, { month: 'short' })}
                     </div>
                   </div>
 
@@ -188,11 +193,11 @@ export function AppointmentsTab() {
                     </div>
 
                     <Button variant="outline" size="sm">
-                      View Summary
+                      {t('viewSummary')}
                     </Button>
                   </div>
 
-                  <Badge variant="success">✓ Completed</Badge>
+                  <Badge variant="success">✓ {t('completed')}</Badge>
                 </div>
               </Card>
             </motion.div>

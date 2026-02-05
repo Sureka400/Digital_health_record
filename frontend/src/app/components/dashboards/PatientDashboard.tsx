@@ -8,13 +8,14 @@ import { AppointmentsTab } from '@/app/components/patient/AppointmentsTab';
 import { SchemesTab } from '@/app/components/patient/SchemesTab';
 import { EmergencyTab } from '@/app/components/patient/EmergencyTab';
 import { useTranslation } from '@/app/utils/translations';
+import { useLanguage } from '@/app/context/LanguageContext';
 
 interface PatientDashboardProps {
   onLogout: () => void;
-  language: string;
 }
 
-export function PatientDashboard({ onLogout, language }: PatientDashboardProps) {
+export function PatientDashboard({ onLogout }: PatientDashboardProps) {
+  const { language, setLanguage } = useLanguage();
   const { t } = useTranslation(language);
   const [activeTab, setActiveTab] = useState('qr');
 
@@ -25,6 +26,14 @@ export function PatientDashboard({ onLogout, language }: PatientDashboardProps) 
     { id: 'appointments', name: t('appointments'), icon: Calendar, color: '#ff9800' },
     { id: 'schemes', name: t('schemes'), icon: Gift, color: '#4caf50' },
     { id: 'emergency', name: t('emergency'), icon: AlertCircle, color: '#f44336' },
+  ];
+
+  const languages = [
+    { code: 'en', name: 'English' },
+    { code: 'ml', name: 'മലയാളം' },
+    { code: 'hi', name: 'हिंदी' },
+    { code: 'ta', name: 'தமிழ்' },
+    { code: 'bn', name: 'বাংলা' },
   ];
 
   return (
@@ -39,7 +48,7 @@ export function PatientDashboard({ onLogout, language }: PatientDashboardProps) 
               </div>
               <div>
                 <h1 className="text-2xl font-bold">{t('patientPortal')}</h1>
-                <p className="text-sm opacity-90">Welcome, Ravi Kumar</p>
+                <p className="text-sm opacity-90">{t('welcomeUser')}, Ravi Kumar</p>
               </div>
             </div>
             <div className="flex items-center gap-3">
@@ -49,13 +58,13 @@ export function PatientDashboard({ onLogout, language }: PatientDashboardProps) 
                   <span className="text-xs uppercase">{language}</span>
                 </button>
                 <div className="absolute right-0 top-full mt-2 w-32 bg-zinc-900 border border-zinc-800 rounded-xl shadow-xl opacity-0 group-hover:opacity-100 pointer-events-none group-hover:pointer-events-auto transition-all z-50 p-1">
-                  {['en', 'ml', 'hi'].map((lang) => (
+                  {languages.map((lang) => (
                     <button
-                      key={lang}
-                      onClick={() => window.dispatchEvent(new CustomEvent('change-language', { detail: lang }))}
-                      className={`w-full text-left px-3 py-2 text-xs rounded-lg hover:bg-zinc-800 transition-colors ${language === lang ? 'text-[#10b981] font-bold' : 'text-gray-400'}`}
+                      key={lang.code}
+                      onClick={() => setLanguage(lang.code)}
+                      className={`w-full text-left px-3 py-2 text-xs rounded-lg hover:bg-zinc-800 transition-colors ${language === lang.code ? 'text-[#10b981] font-bold' : 'text-gray-400'}`}
                     >
-                      {lang === 'en' ? 'English' : lang === 'ml' ? 'മലയാളം' : 'हिंदी'}
+                      {lang.name}
                     </button>
                   ))}
                 </div>
@@ -117,8 +126,8 @@ export function PatientDashboard({ onLogout, language }: PatientDashboardProps) 
       {/* Footer */}
       <div className="bg-zinc-900/80 backdrop-blur-xl border-t border-zinc-800 mt-12">
         <div className="container mx-auto px-4 py-6 text-center text-sm text-gray-400">
-          <p>Kerala Digital Health Portal • Powered by Government of Kerala</p>
-          <p className="mt-1 text-xs">SIH 2025 Initiative</p>
+          <p>{t('keralaHealthPortal')} • {t('poweredByGov')}</p>
+          <p className="mt-1 text-xs">{t('sihInitiative')}</p>
         </div>
       </div>
 

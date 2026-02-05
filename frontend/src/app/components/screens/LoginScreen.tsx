@@ -56,21 +56,21 @@ export function LoginScreen({ onLogin, language }: LoginScreenProps) {
                   <Users className="w-5 h-5" />
                   <div>
                     <div className="text-2xl font-bold">2.5L+</div>
-                    <div className="text-xs opacity-90">Lives Supported</div>
+                    <div className="text-xs opacity-90">{t('livesSupported')}</div>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
                   <Activity className="w-5 h-5" />
                   <div>
                     <div className="text-2xl font-bold">150+</div>
-                    <div className="text-xs opacity-90">Hospitals Connected</div>
+                    <div className="text-xs opacity-90">{t('hospitalsConnected')}</div>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
                   <Heart className="w-5 h-5" />
                   <div>
                     <div className="text-2xl font-bold">5M+</div>
-                    <div className="text-xs opacity-90">Records Digitized</div>
+                    <div className="text-xs opacity-90">{t('recordsDigitized')}</div>
                   </div>
                 </div>
               </div>
@@ -102,10 +102,10 @@ export function LoginScreen({ onLogin, language }: LoginScreenProps) {
               />
               <div className="absolute bottom-6 left-6 right-6 bg-zinc-900/95 backdrop-blur-sm rounded-xl p-4 shadow-lg border border-zinc-800">
                 <p className="text-sm font-medium text-[#10b981]">
-                  🌟 Empowering Migrant Workers with Digital Health Records
+                  🌟 {t('empoweringMigrantWorkers')}
                 </p>
                 <p className="text-xs text-gray-300 mt-1">
-                  Access your health records anytime, anywhere across Kerala
+                  {t('accessAnywhere')}
                 </p>
               </div>
             </div>
@@ -182,7 +182,7 @@ export function LoginScreen({ onLogin, language }: LoginScreenProps) {
                 >
                   <Input
                     type="tel"
-                    placeholder="Enter your mobile number"
+                    placeholder={t('enterMobileNumber')}
                     value={phoneNumber}
                     onChange={(e) => setPhoneNumber(e.target.value)}
                     icon={<Phone className="w-5 h-5" />}
@@ -191,7 +191,7 @@ export function LoginScreen({ onLogin, language }: LoginScreenProps) {
                   
                   <button className="flex items-center gap-2 text-sm text-[#2196F3] hover:underline">
                     <Mic className="w-4 h-4" />
-                    Use voice input
+                    {t('useVoiceInput')}
                   </button>
 
                   <Button variant="primary" size="lg" fullWidth onClick={() => handleLogin('patient')} disabled={loading}>
@@ -211,7 +211,7 @@ export function LoginScreen({ onLogin, language }: LoginScreenProps) {
                     <QrCode className="w-24 h-24 text-muted-foreground" />
                   </div>
                   <p className="text-sm text-muted-foreground mb-4">
-                    Scan your health QR code to sign in instantly
+                    {t('scanQRToSignIn')}
                   </p>
                   <Button variant="outline" size="lg" fullWidth onClick={() => handleLogin('patient')} disabled={loading}>
                     {loading ? t('authenticating') : t('openCamera')}
@@ -228,7 +228,7 @@ export function LoginScreen({ onLogin, language }: LoginScreenProps) {
                 >
                   <Input
                     type="text"
-                    placeholder="Enter your government ID (optional)"
+                    placeholder={t('enterGovId')}
                     icon={<CreditCard className="w-5 h-5" />}
                     label={t('govId')}
                   />
@@ -240,16 +240,16 @@ export function LoginScreen({ onLogin, language }: LoginScreenProps) {
 
               {/* Quick Role Selection for Demo */}
               <div className="mt-8 pt-6 border-t border-border">
-                <p className="text-xs text-muted-foreground mb-3 text-center">Quick Demo Access</p>
+                <p className="text-xs text-muted-foreground mb-3 text-center">{t('quickDemoAccess')}</p>
                 <div className="grid grid-cols-3 gap-2">
                   <Button variant="outline" size="sm" onClick={() => handleLogin('patient')} disabled={loading}>
-                    Patient
+                    {t('patient')}
                   </Button>
                   <Button variant="outline" size="sm" onClick={() => handleLogin('doctor')} disabled={loading}>
-                    Doctor
+                    {t('doctor')}
                   </Button>
                   <Button variant="outline" size="sm" onClick={() => handleLogin('admin')} disabled={loading}>
-                    Admin
+                    {t('admin')}
                   </Button>
                 </div>
               </div>
@@ -263,12 +263,12 @@ export function LoginScreen({ onLogin, language }: LoginScreenProps) {
               transition={{ delay: 0.3 }}
             >
               <p className="text-xs text-gray-400 text-center mb-2">
-                ♿ Accessible for everyone
+                ♿ {t('accessibleForEveryone')}
               </p>
               <div className="flex justify-center gap-4 text-xs text-gray-400">
-                <span>🔊 Voice Support</span>
-                <span>🌐 5 Languages</span>
-                <span>📱 Works Offline</span>
+                <span>🔊 {t('voiceSupport')}</span>
+                <span>🌐 {t('fiveLanguages')}</span>
+                <span>📱 {t('worksOffline')}</span>
               </div>
             </motion.div>
           </motion.div>
