@@ -24,10 +24,10 @@ export function UploadRecordsTab() {
   const [error, setError] = useState<string | null>(null);
 
   const recordTypes = [
-    { id: 'prescription', name: t('prescription'), icon: '💊' },
-    { id: 'lab', name: t('labReport'), icon: '🧪' },
-    { id: 'imaging', name: t('xrayScan'), icon: '🩻' },
-    { id: 'notes', name: t('clinicalNotes'), icon: '📝' },
+    { id: 'prescription', name: 'Prescription', icon: '💊' },
+    { id: 'lab', name: 'Lab Report', icon: '🧪' },
+    { id: 'imaging', name: 'X-Ray/Scan', icon: '🩻' },
+    { id: 'notes', name: 'Clinical Notes', icon: '📝' },
   ];
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -69,19 +69,19 @@ export function UploadRecordsTab() {
       {/* Header */}
       <Card>
         <h2 className="text-2xl font-bold text-foreground mb-2">
-          {t('uploadRecordsTitle')}
+          {t('uploadRecords')}
         </h2>
         <p className="text-sm text-muted-foreground">
-          {t('uploadRecordsDesc')}
+          {t('Add prescriptions, scans, and notes to patient records')}
         </p>
       </Card>
 
       {/* Patient Selection */}
       <Card>
-        <h3 className="font-semibold text-foreground mb-3">{t('selectPatient')}</h3>
+        <h3 className="font-semibold text-foreground mb-3">{t('Select Patient')}</h3>
         <Input
           type="text"
-          placeholder={t('patientIdPlaceholder')}
+          placeholder={t("Enter Patient ID or scan QR code")}
           icon={<FileText className="w-5 h-5" />}
           value={patientId}
           onChange={(e) => setPatientId(e.target.value)}
@@ -90,18 +90,18 @@ export function UploadRecordsTab() {
           <div className="flex items-center justify-between">
             <div>
               <p className="font-semibold text-foreground">
-                {patientId === '6981fe42f8fab946afe86511' ? 'John Doe' : t('unknownPatient')}
+                {patientId === '6981fe42f8fab946afe86511' ? 'John Doe' : t('Unknown Patient')}
               </p>
               <p className="text-sm text-muted-foreground">{t('id')}: {patientId}</p>
             </div>
-            <Badge variant="success">{t('eligible')}</Badge>
+            <Badge variant="success">{t('Selected')}</Badge>
           </div>
         </div>
       </Card>
 
       {/* Record Type Selection */}
       <Card>
-        <h3 className="font-semibold text-foreground mb-3">{t('recordType')}</h3>
+        <h3 className="font-semibold text-foreground mb-3">{t('Record Type')}</h3>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           {recordTypes.map((type) => (
             <button
@@ -114,7 +114,7 @@ export function UploadRecordsTab() {
               }`}
             >
               <div className="text-3xl mb-2">{type.icon}</div>
-              <div className="text-sm font-medium">{type.name}</div>
+              <div className="text-sm font-medium">{t(type.name)}</div>
             </button>
           ))}
         </div>
@@ -122,7 +122,7 @@ export function UploadRecordsTab() {
 
       {/* Upload Area */}
       <Card>
-        <h3 className="font-semibold text-foreground mb-3">{t('uploadDocument')}</h3>
+        <h3 className="font-semibold text-foreground mb-3">{t('Upload Document')}</h3>
         
         {!selectedFile ? (
           <div className="space-y-4">
@@ -133,10 +133,10 @@ export function UploadRecordsTab() {
             >
               <Upload className="w-16 h-16 mx-auto text-muted-foreground mb-4" />
               <p className="font-semibold text-foreground mb-1">
-                {t('dropFilesDesc')}
+                {t('Drop files here or click to upload')}
               </p>
               <p className="text-sm text-muted-foreground">
-                {t('uploadFormatsDesc')}
+                {t('Supports PDF, JPG, PNG up to 10MB')}
               </p>
               <input
                 id="file-upload"
@@ -148,9 +148,9 @@ export function UploadRecordsTab() {
             </motion.label>
 
             <div className="text-center">
-              <p className="text-sm text-muted-foreground mb-3">Or</p>
+              <p className="text-sm text-muted-foreground mb-3">{t('Or')}</p>
               <Button variant="outline" icon={<Camera className="w-4 h-4" />}>
-                {t('takePhoto')}
+                {t('Take Photo')}
               </Button>
             </div>
           </div>
@@ -186,10 +186,10 @@ export function UploadRecordsTab() {
                     <Sparkles className="w-5 h-5 text-purple-600 flex-shrink-0 mt-0.5" />
                     <div>
                       <p className="font-semibold text-sm text-foreground mb-1">
-                        {t('aiAutoTagging')}
+                        {t('AI Auto-Tagging')}
                       </p>
                       <p className="text-xs text-muted-foreground">
-                        {t('aiAutoTaggingDesc')}
+                        {t('Document analyzed and tagged automatically')}
                       </p>
                     </div>
                   </div>
@@ -199,35 +199,35 @@ export function UploadRecordsTab() {
                 <div className="space-y-3">
                   <Input
                     type="text"
-                    placeholder={t('recordTitle')}
-                    label={t('title')}
+                    placeholder={t("Record Title")}
+                    label={t("name")}
                     value={title}
                     onChange={(e) => setTitle(e.target.value)}
                   />
                   <Input
                     type="text"
-                    placeholder={t('askAnything')}
-                    label={t('notesOptional')}
+                    placeholder={t("Add notes or description...")}
+                    label={t("notes")}
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
                   />
                   <Input
                     type="text"
-                    placeholder={t('hospitalName')}
-                    label={t('hospital')}
+                    placeholder={t("Hospital Name")}
+                    label={t("Hospital")}
                     value={hospital}
                     onChange={(e) => setHospital(e.target.value)}
                   />
                   <Input
                     type="text"
-                    placeholder={t('doctorName')}
-                    label={t('doctor')}
+                    placeholder={t("Doctor Name")}
+                    label={t("Doctor")}
                     value={doctor}
                     onChange={(e) => setDoctor(e.target.value)}
                   />
                   
                   {error && (
-                    <p className="text-sm text-red-500">{error}</p>
+                    <p className="text-sm text-red-500">{t(error)}</p>
                   )}
 
                   <Button
@@ -239,7 +239,7 @@ export function UploadRecordsTab() {
                     icon={uploading ? undefined : <Upload className="w-5 h-5" />}
                     className="mt-4"
                   >
-                    {uploading ? t('processing') : t('uploadAndLink')}
+                    {uploading ? t('sending') : t('Upload & Link to Patient')}
                   </Button>
                 </div>
               </motion.div>
@@ -253,10 +253,10 @@ export function UploadRecordsTab() {
                   <Check className="w-10 h-10 text-green-600" />
                 </div>
                 <h3 className="text-xl font-bold text-foreground mb-2">
-                  {t('uploadSuccessful')}
+                  {t('Upload Successful!')}
                 </h3>
                 <p className="text-sm text-muted-foreground">
-                  {t('uploadSuccessfulDesc')}
+                  {t("Record has been added to patient's health history")}
                 </p>
               </motion.div>
             )}
@@ -271,12 +271,12 @@ export function UploadRecordsTab() {
             <Sparkles className="w-6 h-6 text-white" />
           </div>
           <div>
-            <h3 className="font-semibold text-foreground mb-1">{t('aiPoweredFeatures')}</h3>
+            <h3 className="font-semibold text-foreground mb-1">AI-Powered Features</h3>
             <ul className="text-sm text-muted-foreground space-y-1">
-              <li>✓ {t('autoClassification')}</li>
-              <li>✓ {t('textExtraction')}</li>
-              <li>✓ {t('multiLangSupport')}</li>
-              <li>✓ {t('smartTagging')}</li>
+              <li>✓ Automatic document classification</li>
+              <li>✓ Text extraction from images</li>
+              <li>✓ Multi-language support & auto-translation</li>
+              <li>✓ Smart tagging and indexing</li>
             </ul>
           </div>
         </div>
@@ -284,11 +284,11 @@ export function UploadRecordsTab() {
 
       {/* Recent Uploads */}
       <Card>
-        <h3 className="font-semibold text-foreground mb-3">{t('recentUploads')}</h3>
+        <h3 className="font-semibold text-foreground mb-3">{t('Recent Uploads')}</h3>
         <div className="space-y-2">
           {[
-            { name: 'Blood Test Report', date: '2 hours ago', type: t('labReport') },
-            { name: 'Prescription - Diabetes', date: 'Yesterday', type: t('prescription') },
+            { name: 'Blood Test Report', date: '2 hours ago', type: 'Lab Report' },
+            { name: 'Prescription - Diabetes', date: 'Yesterday', type: 'Prescription' },
           ].map((item, index) => (
             <div
               key={index}
@@ -297,9 +297,9 @@ export function UploadRecordsTab() {
               <div className="flex items-center gap-3">
                 <FileText className="w-5 h-5 text-[#0b6e4f]" />
                 <div>
-                  <p className="font-medium text-sm text-foreground">{item.name}</p>
+                  <p className="font-medium text-sm text-foreground">{t(item.name)}</p>
                   <p className="text-xs text-muted-foreground">
-                    {item.type} • {item.date}
+                    {t(item.type)} • {item.date}
                   </p>
                 </div>
               </div>

@@ -167,7 +167,7 @@ export function HealthRecordsTab({ onNavigate }: HealthRecordsTabProps) {
                   <div className="flex-1">
                     <div className="flex items-start justify-between mb-2">
                       <div>
-                        <h3 className="font-semibold text-foreground">{record.title}</h3>
+                        <h3 className="font-semibold text-foreground">{t(record.title)}</h3>
                         <p className="text-sm text-muted-foreground flex items-center gap-2 mt-1">
                           <Calendar className="w-3 h-3" />
                           {new Date(record.createdAt).toLocaleDateString(language === 'en' ? 'en-IN' : language, {
@@ -287,7 +287,7 @@ function RecordDetailsDialog({ record, open, onOpenChange, onDownload, onShare, 
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-2xl bg-zinc-950 border-zinc-800 text-white">
         <DialogHeader>
-          <DialogTitle className="text-2xl font-bold">{record.title}</DialogTitle>
+          <DialogTitle className="text-2xl font-bold">{t(record.title)}</DialogTitle>
           <DialogDescription className="text-zinc-400">
             {new Date(record.createdAt).toLocaleDateString(language === 'en' ? 'en-IN' : language, {
               year: 'numeric',
@@ -300,25 +300,25 @@ function RecordDetailsDialog({ record, open, onOpenChange, onDownload, onShare, 
         <div className="grid gap-6 py-4 text-white">
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1">
-              <p className="text-xs text-zinc-500 uppercase font-semibold">Hospital</p>
+              <p className="text-xs text-zinc-500 uppercase font-semibold">{t('Hospital')}</p>
               <p className="text-sm">{record.hospital || 'Not specified'}</p>
             </div>
             <div className="space-y-1">
-              <p className="text-xs text-zinc-500 uppercase font-semibold">Doctor</p>
+              <p className="text-xs text-zinc-500 uppercase font-semibold">{t('Doctor')}</p>
               <p className="text-sm">{record.doctor || 'Not specified'}</p>
             </div>
           </div>
 
           <div className="space-y-2">
-            <p className="text-xs text-zinc-500 uppercase font-semibold">Description</p>
+            <p className="text-xs text-zinc-500 uppercase font-semibold">{t('Description')}</p>
             <p className="text-sm text-zinc-300 bg-zinc-900/50 p-3 rounded-lg border border-zinc-800">
-              {record.description || 'No additional description provided for this record.'}
+              {record.description ? t(record.description) : 'No additional description provided for this record.'}
             </p>
           </div>
 
           {record.fileUrl && (
             <div className="space-y-2">
-              <p className="text-xs text-zinc-500 uppercase font-semibold">Document Preview</p>
+              <p className="text-xs text-zinc-500 uppercase font-semibold">{t('Document Preview')}</p>
               <div className="aspect-video bg-zinc-900 rounded-lg border border-zinc-800 flex items-center justify-center overflow-hidden">
                 {record.fileUrl.endsWith('.pdf') ? (
                   <div className="text-center p-4">

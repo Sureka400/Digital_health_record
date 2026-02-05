@@ -4,13 +4,8 @@ import { Sparkles, TrendingUp, AlertTriangle, Target, Download, Brain } from 'lu
 import { Card } from '@/app/components/ui/card';
 import { Button } from '@/app/components/ui/button';
 import { Badge } from '@/app/components/ui/badge';
-import { useTranslation } from '@/app/utils/translations';
-import { useLanguage } from '@/app/context/LanguageContext';
 
 export function PolicyInsightsTab() {
-  const { language } = useLanguage();
-  const { t } = useTranslation(language);
-
   const aiPredictions = [
     {
       title: 'Predicted Seasonal Flu Outbreak',
@@ -21,7 +16,51 @@ export function PolicyInsightsTab() {
       recommendation: 'Increase vaccination drives and stock emergency supplies',
       impact: 'Estimated 2,500+ cases',
     },
-    // ... other predictions
+    {
+      title: 'Diabetes Prevalence Rising',
+      severity: 'medium',
+      location: 'Statewide',
+      timeline: 'Ongoing trend',
+      confidence: '92%',
+      recommendation: 'Expand diabetes screening programs in high-risk zones',
+      impact: 'Current: 18% of registered workers',
+    },
+    {
+      title: 'Healthcare Access Gap',
+      severity: 'medium',
+      location: 'Rural Areas - Idukki, Wayanad',
+      timeline: 'Immediate',
+      confidence: '78%',
+      recommendation: 'Deploy mobile health units and telemedicine services',
+      impact: '45,000 workers underserved',
+    },
+  ];
+
+  const highRiskZones = [
+    { zone: 'Ernakulam - Industrial Area', risk: 'High', population: 38000, reason: 'High density, poor sanitation' },
+    { zone: 'Kozhikode - Construction Sites', risk: 'Medium', population: 12000, reason: 'Injury-prone work' },
+    { zone: 'Trivandrum - Coastal Region', risk: 'Medium', population: 8500, reason: 'Waterborne diseases' },
+  ];
+
+  const policyRecommendations = [
+    {
+      category: 'Preventive Care',
+      recommendation: 'Mandatory quarterly health screenings for construction workers',
+      expectedImpact: '30% reduction in late-stage disease detection',
+      budget: '₹2.5 Cr annually',
+    },
+    {
+      category: 'Digital Infrastructure',
+      recommendation: 'Expand QR code distribution to 100% coverage',
+      expectedImpact: 'Universal health record access across Kerala',
+      budget: '₹1.2 Cr one-time',
+    },
+    {
+      category: 'Health Education',
+      recommendation: 'Multilingual health awareness campaigns',
+      expectedImpact: '50% increase in preventive care adoption',
+      budget: '₹80 Lakh annually',
+    },
   ];
 
   return (
@@ -37,9 +76,9 @@ export function PolicyInsightsTab() {
             <Sparkles className="w-6 h-6 text-white" />
           </motion.div>
           <div>
-            <h2 className="text-2xl font-bold text-foreground">{t('policyInsights')}</h2>
+            <h2 className="text-2xl font-bold text-foreground">AI-Powered Policy Insights</h2>
             <p className="text-sm text-muted-foreground">
-              {t('realTimeInsights')}
+              Data-driven predictions and recommendations for decision-making
             </p>
           </div>
         </div>
@@ -49,7 +88,7 @@ export function PolicyInsightsTab() {
       <div>
         <h3 className="font-semibold text-foreground mb-3 flex items-center gap-2">
           <Brain className="w-5 h-5 text-purple-600" />
-          {t('aiPredictiveAnalysis')}
+          AI Predictive Analysis
         </h3>
         
         <div className="space-y-3">
@@ -105,10 +144,10 @@ export function PolicyInsightsTab() {
 
                 <div className="flex gap-2">
                   <Button variant="primary" size="sm">
-                    {t('generateActionPlan')}
+                    Generate Action Plan
                   </Button>
                   <Button variant="outline" size="sm">
-                    {t('viewDetails')}
+                    View Details
                   </Button>
                 </div>
               </Card>
@@ -117,23 +156,79 @@ export function PolicyInsightsTab() {
         </div>
       </div>
 
+      {/* High-Risk Zones */}
+      <Card>
+        <h3 className="font-semibold text-foreground mb-4 flex items-center gap-2">
+          <AlertTriangle className="w-5 h-5 text-red-600" />
+          High-Risk Zones Identified
+        </h3>
+
+        <div className="space-y-3">
+          {highRiskZones.map((zone, index) => (
+            <div
+              key={index}
+              className={`p-4 rounded-lg border ${
+                zone.risk === 'High' ? 'bg-red-50 border-red-200' : 'bg-orange-50 border-orange-200'
+              }`}
+            >
+              <div className="flex items-start justify-between mb-2">
+                <div>
+                  <h4 className="font-semibold text-foreground">{zone.zone}</h4>
+                  <p className="text-sm text-muted-foreground">{zone.population.toLocaleString()} workers</p>
+                </div>
+                <Badge variant={zone.risk === 'High' ? 'danger' : 'warning'}>
+                  {zone.risk} Risk
+                </Badge>
+              </div>
+              <p className="text-sm text-muted-foreground">
+                <strong>Reason:</strong> {zone.reason}
+              </p>
+            </div>
+          ))}
+        </div>
+      </Card>
+
       {/* Policy Recommendations */}
       <Card>
         <h3 className="font-semibold text-foreground mb-4 flex items-center gap-2">
           <Target className="w-5 h-5 text-green-600" />
-          {t('dataDrivenPolicyRecommendations')}
+          Data-Driven Policy Recommendations
         </h3>
+
+        <div className="space-y-4">
+          {policyRecommendations.map((policy, index) => (
+            <motion.div
+              key={index}
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: index * 0.1 }}
+              className="p-4 bg-accent rounded-lg"
+            >
+              <div className="flex items-start justify-between mb-2">
+                <Badge variant="info">{policy.category}</Badge>
+                <span className="text-sm font-semibold text-foreground">{policy.budget}</span>
+              </div>
+
+              <h4 className="font-semibold text-foreground mb-2">{policy.recommendation}</h4>
+              
+              <div className="flex items-center gap-2 text-sm text-green-600">
+                <TrendingUp className="w-4 h-4" />
+                <span>{policy.expectedImpact}</span>
+              </div>
+            </motion.div>
+          ))}
+        </div>
 
         <div className="mt-4">
           <Button variant="primary" fullWidth icon={<Download className="w-4 h-4" />}>
-            {t('downloadFullReport')}
+            Download Full Policy Report
           </Button>
         </div>
       </Card>
 
       {/* Impact Metrics */}
       <Card className="bg-gradient-to-r from-green-50 to-blue-50 border-green-200">
-        <h3 className="font-semibold text-foreground mb-3">{t('projectedImpact')}</h3>
+        <h3 className="font-semibold text-foreground mb-3">Projected Impact (Next 12 Months)</h3>
         
         <div className="grid grid-cols-2 gap-4">
           <div>
@@ -160,9 +255,9 @@ export function PolicyInsightsTab() {
         <div className="flex items-start gap-3">
           <Sparkles className="w-6 h-6 text-purple-600" />
           <div>
-            <h3 className="font-semibold text-foreground mb-1">{t('aboutAiPredictions')}</h3>
+            <h3 className="font-semibold text-foreground mb-1">About AI Predictions</h3>
             <p className="text-sm text-muted-foreground">
-              Our AI models analyze patterns from 5M+ health records, weather data, demographic information, and historical disease trends.
+              Our AI models analyze patterns from 5M+ health records, weather data, demographic information, and historical disease trends. All predictions include confidence scores and are meant to support, not replace, expert decision-making.
             </p>
           </div>
         </div>

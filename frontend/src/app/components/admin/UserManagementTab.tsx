@@ -5,8 +5,6 @@ import { Card } from '@/app/components/ui/card';
 import { Button } from '@/app/components/ui/button';
 import { Input } from '@/app/components/ui/input';
 import { Badge } from '@/app/components/ui/badge';
-import { useTranslation } from '@/app/utils/translations';
-import { useLanguage } from '@/app/context/LanguageContext';
 
 interface UserRecord {
   id: string;
@@ -21,8 +19,6 @@ interface UserRecord {
 }
 
 export function UserManagementTab() {
-  const { language } = useLanguage();
-  const { t } = useTranslation(language);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterRole, setFilterRole] = useState<string>('all');
 
@@ -35,17 +31,48 @@ export function UserManagementTab() {
       phone: '+91 98765 43210',
       organization: 'Medical College Hospital, Trivandrum',
       verified: true,
-      lastActive: `2 ${t('hours')} ${t('ago')}`,
+      lastActive: '2 hours ago',
       status: 'active',
     },
-    // ... other users
+    {
+      id: '2',
+      name: 'District Hospital Ernakulam',
+      role: 'hospital',
+      email: 'admin@dhernakulam.gov',
+      phone: '+91 98765 43211',
+      organization: 'District Hospital, Ernakulam',
+      verified: true,
+      lastActive: '1 day ago',
+      status: 'active',
+    },
+    {
+      id: '3',
+      name: 'Dr. Suresh Kumar',
+      role: 'doctor',
+      email: 'suresh.kumar@hospital.gov',
+      phone: '+91 98765 43212',
+      organization: 'Community Health Center, Kozhikode',
+      verified: false,
+      lastActive: '3 days ago',
+      status: 'pending',
+    },
+    {
+      id: '4',
+      name: 'Rajesh Kumar',
+      role: 'patient',
+      email: 'rajesh.kumar@email.com',
+      phone: '+91 98765 43213',
+      verified: true,
+      lastActive: '5 hours ago',
+      status: 'active',
+    },
   ];
 
   const roleFilters = [
-    { id: 'all', name: t('allRecords'), count: users.length },
-    { id: 'doctor', name: t('doctor'), count: users.filter(u => u.role === 'doctor').length },
-    { id: 'hospital', name: t('hospital'), count: users.filter(u => u.role === 'hospital').length },
-    { id: 'patient', name: t('patient'), count: users.filter(u => u.role === 'patient').length },
+    { id: 'all', name: 'All Users', count: users.length },
+    { id: 'doctor', name: 'Doctors', count: users.filter(u => u.role === 'doctor').length },
+    { id: 'hospital', name: 'Hospitals', count: users.filter(u => u.role === 'hospital').length },
+    { id: 'patient', name: 'Patients', count: users.filter(u => u.role === 'patient').length },
   ];
 
   const filteredUsers = filterRole === 'all'
@@ -55,10 +82,11 @@ export function UserManagementTab() {
   const getRoleIcon = (role: string) => {
     switch (role) {
       case 'doctor':
-      case 'patient':
         return <User className="w-5 h-5" />;
       case 'hospital':
         return <Building2 className="w-5 h-5" />;
+      case 'patient':
+        return <User className="w-5 h-5" />;
       default:
         return <User className="w-5 h-5" />;
     }
@@ -66,10 +94,14 @@ export function UserManagementTab() {
 
   const getRoleColor = (role: string) => {
     switch (role) {
-      case 'doctor': return 'bg-blue-100 text-blue-700';
-      case 'hospital': return 'bg-purple-100 text-purple-700';
-      case 'patient': return 'bg-green-100 text-green-700';
-      default: return 'bg-gray-100 text-gray-700';
+      case 'doctor':
+        return 'bg-blue-100 text-blue-700';
+      case 'hospital':
+        return 'bg-purple-100 text-purple-700';
+      case 'patient':
+        return 'bg-green-100 text-green-700';
+      default:
+        return 'bg-gray-100 text-gray-700';
     }
   };
 
@@ -79,13 +111,13 @@ export function UserManagementTab() {
       <Card>
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h2 className="text-2xl font-bold text-foreground">{t('userManagement')}</h2>
+            <h2 className="text-2xl font-bold text-foreground">User Management</h2>
             <p className="text-sm text-muted-foreground">
-              {t('realTimeInsights')}
+              Manage doctors, hospitals, and patient accounts
             </p>
           </div>
           <Button variant="primary" icon={<UserCheck className="w-4 h-4" />}>
-            {t('addUser')}
+            Add User
           </Button>
         </div>
 
@@ -93,13 +125,13 @@ export function UserManagementTab() {
         <div className="space-y-3">
           <Input
             type="text"
-            placeholder={t('searchUsersPlaceholder')}
+            placeholder="Search users by name, email, or phone..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             icon={<Search className="w-5 h-5" />}
           />
 
-          <div className="flex gap-2 overflow-x-auto no-scrollbar">
+          <div className="flex gap-2 overflow-x-auto">
             {roleFilters.map((filter) => (
               <button
                 key={filter.id}
@@ -118,40 +150,42 @@ export function UserManagementTab() {
       </Card>
 
       {/* Pending Verifications */}
-      <Card className="bg-yellow-50 border-yellow-200">
-        <div className="flex items-start gap-3 mb-4">
-          <Shield className="w-6 h-6 text-yellow-600" />
-          <div>
-            <h3 className="font-semibold text-foreground mb-1">
-              {t('pendingVerifications')}
-            </h3>
-            <p className="text-sm text-muted-foreground">
-              {t('reviewCarefully')}
-            </p>
+      {users.filter(u => !u.verified).length > 0 && (
+        <Card className="bg-yellow-50 border-yellow-200">
+          <div className="flex items-start gap-3 mb-4">
+            <Shield className="w-6 h-6 text-yellow-600" />
+            <div>
+              <h3 className="font-semibold text-foreground mb-1">
+                Pending Verifications ({users.filter(u => !u.verified).length})
+              </h3>
+              <p className="text-sm text-muted-foreground">
+                Review and verify new healthcare professional accounts
+              </p>
+            </div>
           </div>
-        </div>
-        <Button variant="outline" size="sm">
-          {t('reviewPending')}
-        </Button>
-      </Card>
+          <Button variant="outline" size="sm">
+            Review Pending
+          </Button>
+        </Card>
+      )}
 
       {/* Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+      <div className="grid grid-cols-4 gap-3">
         <Card hover className="text-center">
           <p className="text-2xl font-bold text-[#0b6e4f]">{users.filter(u => u.status === 'active').length}</p>
-          <p className="text-sm text-muted-foreground">{t('activeUsers')}</p>
+          <p className="text-sm text-muted-foreground">Active Users</p>
         </Card>
         <Card hover className="text-center">
           <p className="text-2xl font-bold text-yellow-600">{users.filter(u => u.status === 'pending').length}</p>
-          <p className="text-sm text-muted-foreground">{t('pending')}</p>
+          <p className="text-sm text-muted-foreground">Pending</p>
         </Card>
         <Card hover className="text-center">
           <p className="text-2xl font-bold text-red-600">{users.filter(u => u.status === 'suspended').length}</p>
-          <p className="text-sm text-muted-foreground">{t('suspended')}</p>
+          <p className="text-sm text-muted-foreground">Suspended</p>
         </Card>
         <Card hover className="text-center">
           <p className="text-2xl font-bold text-[#2196F3]">{users.filter(u => u.verified).length}</p>
-          <p className="text-sm text-muted-foreground">{t('verified')}</p>
+          <p className="text-sm text-muted-foreground">Verified</p>
         </Card>
       </div>
 
@@ -165,32 +199,78 @@ export function UserManagementTab() {
             transition={{ delay: index * 0.05 }}
           >
             <Card hover>
-              <div className="flex items-start justify-between gap-4">
+              <div className="flex items-start justify-between">
                 <div className="flex gap-4 flex-1">
-                  <div className={`w-12 h-12 rounded-full ${getRoleColor(user.role)} flex items-center justify-center flex-shrink-0`}>
+                  {/* Avatar */}
+                  <div className={`w-12 h-12 rounded-full ${getRoleColor(user.role)} flex items-center justify-center`}>
                     {getRoleIcon(user.role)}
                   </div>
+
+                  {/* Info */}
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-1">
                       <h4 className="font-semibold text-foreground">{user.name}</h4>
-                      {user.verified && <Shield className="w-4 h-4 text-green-600" />}
+                      {user.verified && (
+                        <Shield className="w-4 h-4 text-green-600" />
+                      )}
+                      <Badge variant={
+                        user.status === 'active' ? 'success' :
+                        user.status === 'pending' ? 'warning' :
+                        'danger'
+                      }>
+                        {user.status}
+                      </Badge>
                     </div>
+
                     <div className="space-y-1 text-sm text-muted-foreground">
                       <p>📧 {user.email}</p>
                       <p>📱 {user.phone}</p>
-                      <p className="text-xs">{t('lastVisit')}: {user.lastActive}</p>
+                      {user.organization && (
+                        <p>🏥 {user.organization}</p>
+                      )}
+                      <p className="text-xs">Last active: {user.lastActive}</p>
                     </div>
                   </div>
                 </div>
+
+                {/* Actions */}
                 <div className="flex gap-2">
-                  <Button variant="outline" size="sm">{t('view')}</Button>
-                  <Button variant="ghost" size="sm">{t('edit')}</Button>
+                  {!user.verified && (
+                    <Button variant="primary" size="sm">
+                      Verify
+                    </Button>
+                  )}
+                  <Button variant="outline" size="sm">
+                    View
+                  </Button>
+                  <Button variant="ghost" size="sm">
+                    Edit
+                  </Button>
                 </div>
               </div>
             </Card>
           </motion.div>
         ))}
       </div>
+
+      {/* Role Assignment Info */}
+      <Card className="bg-blue-50 border-blue-200">
+        <div className="flex items-start gap-3">
+          <div className="text-2xl">🔐</div>
+          <div>
+            <h3 className="font-semibold text-foreground mb-1">Role-Based Access Control</h3>
+            <p className="text-sm text-muted-foreground mb-2">
+              The system uses strict role-based permissions to ensure data security and privacy.
+            </p>
+            <div className="text-sm space-y-1">
+              <p>• <strong>Patients:</strong> View own records, manage consent</p>
+              <p>• <strong>Doctors:</strong> Access patient records with consent, upload documents</p>
+              <p>• <strong>Hospitals:</strong> Manage facilities, verify doctors</p>
+              <p>• <strong>Admins:</strong> Full system access, analytics, user management</p>
+            </div>
+          </div>
+        </div>
+      </Card>
     </div>
   );
 }
