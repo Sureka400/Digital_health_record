@@ -23,11 +23,14 @@ export function LoginScreen({ onLogin, language }: LoginScreenProps) {
   const [otpSent, setOtpSent] = useState(false);
   const [otp, setOtp] = useState('');
   const [selectedRole, setSelectedRole] = useState<string | null>(null);
+  const [govId, setGovId] = useState('');
 
   const { isListening, startListening } = useVoice((result) => {
-    // Clean up result (remove spaces if it's an email)
+    // Clean up result (remove spaces)
     const cleanedResult = result.toLowerCase().replace(/\s/g, '');
-    if (otpSent) {
+    if (loginMethod === 'id') {
+      setGovId(cleanedResult.toUpperCase());
+    } else if (otpSent) {
       setOtp(cleanedResult);
     } else {
       setEmail(cleanedResult);
@@ -346,9 +349,25 @@ export function LoginScreen({ onLogin, language }: LoginScreenProps) {
                       <Input
                         type="text"
                         placeholder={t('enterGovId')}
+                        value={govId}
+                        onChange={(e) => setGovId(e.target.value)}
                         icon={<CreditCard className="w-5 h-5" />}
                         label={t('govId')}
                       />
+                      
+                      <button 
+                        onClick={startListening}
+                        disabled={isListening}
+                        className="flex items-center gap-2 text-sm text-[#2196F3] hover:underline disabled:opacity-50"
+                      >
+                        {isListening ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <Mic className="w-4 h-4" />
+                        )}
+                        {isListening ? 'Listening...' : t('useVoiceInput')}
+                      </button>
+
                       <Button variant="primary" size="lg" fullWidth onClick={() => handleLogin(selectedRole)} disabled={loading}>
                         {loading ? t('processing') : t('continue')}
                       </Button>
