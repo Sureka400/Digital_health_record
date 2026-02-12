@@ -7,10 +7,12 @@ const roles = ['PATIENT', 'DOCTOR', 'ADMIN'];
 const PatientSchema = new mongoose.Schema({
   name: { type: String, required: true },
   email: { type: String, required: true, unique: true, index: true },
+  abhaId: { type: String, unique: true, sparse: true, index: true },
   password: { type: String, required: true },
   phone_enc: { type: String },
   role: { type: String, enum: roles, default: 'PATIENT' },
   preferredLanguage: { type: String, default: 'en' },
+  homeState: { type: String }, // For migrant workers
   // AI-ready fields
   aiSummary: { type: String },
   embedding: { type: [Number] },

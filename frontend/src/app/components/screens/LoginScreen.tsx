@@ -23,13 +23,20 @@ export function LoginScreen({ onLogin, language }: LoginScreenProps) {
   const [otpSent, setOtpSent] = useState(false);
   const [otp, setOtp] = useState('');
   const [selectedRole, setSelectedRole] = useState<string | null>(null);
-  const [govId, setGovId] = useState('');
+  const [abhaId, setAbhaId] = useState('');
+  const [homeState, setHomeState] = useState('');
+  const [isGeneratingAbha, setIsGeneratingAbha] = useState(false);
+  const [aadhaar, setAadhaar] = useState('');
+  const [abhaStep, setAbhaStep] = useState<0 | 1 | 2>(0);
+  const [abhaOtp, setAbhaOtp] = useState('');
+  const [txnId, setTxnId] = useState('');
+  const [phoneMask, setPhoneMask] = useState('');
 
   const { isListening, startListening } = useVoice((result) => {
     // Clean up result (remove spaces)
     const cleanedResult = result.toLowerCase().replace(/\s/g, '');
     if (loginMethod === 'id') {
-      setGovId(cleanedResult.toUpperCase());
+      setAbhaId(cleanedResult.toUpperCase());
     } else if (otpSent) {
       setOtp(cleanedResult);
     } else {
@@ -58,6 +65,45 @@ export function LoginScreen({ onLogin, language }: LoginScreenProps) {
     }
   };
 
+  const handleGenerateAbha = async (otpValue?: string) => {
+    if (abhaStep === 0) {
+      if (aadhaar.length !== 12) {
+        setError('Aadhaar number must be 12 digits');
+        return;
+      }
+      setLoading(true);
+      setError(null);
+      try {
+        const response = await api.post('/auth/abha/send-otp', { aadhaar });
+        setTxnId(response.txnId);
+        setPhoneMask(response.phoneMask);
+        setAbhaStep(1);
+        setAbhaOtp(''); // Clear OTP field for next step
+      } catch (err: any) {
+        setError(err.message || 'Failed to send Aadhaar OTP');
+      } finally {
+        setLoading(false);
+      }
+    } else if (abhaStep === 1) {
+      const verifyOtp = otpValue || abhaOtp;
+      if (verifyOtp.length !== 6) {
+        setError('OTP must be 6 digits');
+        return;
+      }
+      setLoading(true);
+      setError(null);
+      try {
+        const response = await api.post('/auth/abha/verify-otp', { txnId, otp: verifyOtp });
+        setAbhaId(response.abhaId);
+        setAbhaStep(2);
+      } catch (err: any) {
+        setError(err.message || 'Failed to verify Aadhaar OTP');
+      } finally {
+        setLoading(false);
+      }
+    }
+  };
+
   const handleLogin = async (role: string) => {
     setLoading(true);
     setError(null);
@@ -69,6 +115,34 @@ export function LoginScreen({ onLogin, language }: LoginScreenProps) {
         localStorage.setItem('token', response.token);
         localStorage.setItem('role', response.role);
         onLogin(response.role);
+      } else if (loginMethod === 'id' && abhaId) {
+        // Handle ABHA ID login/registration for migrant workers
+        // In a real app, this would verify with NHA. Here we simulate registration or login.
+        try {
+          // Try to register first (simplified for demo)
+          const registerData = {
+            name: `User ${abhaId.slice(-4)}`,
+            email: `${abhaId}@health.gov.in`,
+            password: 'password123',
+            abhaId: abhaId,
+            homeState: homeState,
+            role: role.toUpperCase()
+          };
+          response = await api.post('/auth/register', registerData);
+        } catch (err: any) {
+          if (err.message?.includes('already registered')) {
+            // If already exists, login with demo password
+            response = await api.post('/auth/login', { 
+              email: `${abhaId}@health.gov.in`, 
+              password: 'password123' 
+            });
+          } else {
+            throw err;
+          }
+        }
+        localStorage.setItem('token', response.token);
+        localStorage.setItem('role', role);
+        onLogin(role);
       } else {
         // Fallback for non-OTP login (if any)
         const demoEmail = role === 'patient' ? 'patient@demo.com' : (role === 'doctor' ? 'doctor@demo.com' : 'admin@demo.com');
@@ -265,7 +339,7 @@ export function LoginScreen({ onLogin, language }: LoginScreenProps) {
                       }`}
                     >
                       <CreditCard className="w-4 h-4 mx-auto mb-1" />
-                      {t('govId')}
+                      {t('abhaId')}
                     </button>
                   </div>
 
@@ -339,38 +413,134 @@ export function LoginScreen({ onLogin, language }: LoginScreenProps) {
                     </motion.div>
                   )}
 
-                  {/* Gov ID Login */}
+                  {/* ABHA ID Login (for Migrant Workers) */}
                   {loginMethod === 'id' && (
                     <motion.div
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
                       className="space-y-4"
                     >
-                      <Input
-                        type="text"
-                        placeholder={t('enterGovId')}
-                        value={govId}
-                        onChange={(e) => setGovId(e.target.value)}
-                        icon={<CreditCard className="w-5 h-5" />}
-                        label={t('govId')}
-                      />
-                      
-                      <button 
-                        onClick={startListening}
-                        disabled={isListening}
-                        className="flex items-center gap-2 text-sm text-[#2196F3] hover:underline disabled:opacity-50"
-                      >
-                        {isListening ? (
-                          <Loader2 className="w-4 h-4 animate-spin" />
-                        ) : (
-                          <Mic className="w-4 h-4" />
-                        )}
-                        {isListening ? 'Listening...' : t('useVoiceInput')}
-                      </button>
+                      {!isGeneratingAbha ? (
+                        <>
+                          <Input
+                            type="text"
+                            placeholder={t('enterAbhaId')}
+                            value={abhaId}
+                            onChange={(e) => setAbhaId(e.target.value)}
+                            icon={<CreditCard className="w-5 h-5" />}
+                            label={t('abhaId')}
+                          />
 
-                      <Button variant="primary" size="lg" fullWidth onClick={() => handleLogin(selectedRole)} disabled={loading}>
-                        {loading ? t('processing') : t('continue')}
-                      </Button>
+                          <Input
+                            type="text"
+                            placeholder={t('enterHomeState')}
+                            value={homeState}
+                            onChange={(e) => setHomeState(e.target.value)}
+                            icon={<Users className="w-5 h-5" />}
+                            label={t('homeState')}
+                          />
+
+                          <div className="flex flex-col gap-3">
+                            <Button 
+                              variant="outline" 
+                              onClick={() => {
+                                setIsGeneratingAbha(true);
+                                setAbhaStep(0);
+                                setAadhaar('');
+                                setAbhaOtp('');
+                                setError(null);
+                              }}
+                              className="border-[#10b981]/50 text-[#10b981] hover:bg-[#10b981]/10 text-sm h-11"
+                            >
+                              ✨ {t('dontHaveAbha')} {t('generateAbha')}
+                            </Button>
+                            
+                            <button 
+                              onClick={startListening}
+                              disabled={isListening}
+                              className="flex items-center gap-2 text-sm text-[#2196F3] hover:underline disabled:opacity-50"
+                            >
+                              {isListening ? (
+                                <Loader2 className="w-4 h-4 animate-spin" />
+                              ) : (
+                                <Mic className="w-4 h-4" />
+                              )}
+                              {isListening ? 'Listening...' : t('useVoiceInput')}
+                            </button>
+                          </div>
+
+                          <Button variant="primary" size="lg" fullWidth onClick={() => handleLogin(selectedRole!)} disabled={loading}>
+                            {loading ? t('processing') : t('continue')}
+                          </Button>
+                        </>
+                      ) : (
+                        <motion.div
+                          initial={{ opacity: 0, scale: 0.95 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          className="bg-zinc-800/50 p-6 rounded-xl border border-[#10b981]/30"
+                        >
+                          <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
+                            <CreditCard className="w-5 h-5 text-[#10b981]" />
+                            {t('generateAbha')}
+                          </h3>
+
+                          {abhaStep === 0 && (
+                            <div className="space-y-4">
+                              <Input
+                                type="text"
+                                placeholder={t('enterAadhaar')}
+                                value={aadhaar}
+                                onChange={(e) => setAadhaar(e.target.value.replace(/\D/g, '').slice(0, 12))}
+                                label={t('aadhaarNumber')}
+                              />
+                              <Button variant="primary" fullWidth onClick={handleGenerateAbha} disabled={loading}>
+                                {loading ? t('processing') : t('sendOTP')}
+                              </Button>
+                            </div>
+                          )}
+
+                          {abhaStep === 1 && (
+                            <div className="space-y-4">
+                              <p className="text-xs text-gray-400">
+                                OTP sent to linked mobile: <span className="text-white font-medium">{phoneMask}</span>
+                              </p>
+                              <Input
+                                type="text"
+                                placeholder="Enter 6-digit OTP"
+                                value={abhaOtp}
+                                onChange={(e) => setAbhaOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                                label="OTP"
+                              />
+                              <Button variant="primary" fullWidth onClick={() => handleGenerateAbha()} disabled={loading}>
+                                {loading ? t('processing') : t('verifyAadhaar')}
+                              </Button>
+                            </div>
+                          )}
+
+                          {abhaStep === 2 && (
+                            <div className="space-y-4 text-center">
+                              <div className="bg-green-900/20 text-[#10b981] p-3 rounded-lg text-sm mb-4">
+                                {t('abhaSuccess')}
+                              </div>
+                              <div className="text-2xl font-mono text-white tracking-widest bg-zinc-900 p-4 rounded-lg border border-zinc-700">
+                                {abhaId.match(/.{1,4}/g)?.join('-')}
+                              </div>
+                              <Button variant="primary" fullWidth onClick={() => setIsGeneratingAbha(false)}>
+                                {t('continue')}
+                              </Button>
+                            </div>
+                          )}
+
+                          {abhaStep !== 2 && (
+                            <button 
+                              onClick={() => setIsGeneratingAbha(false)}
+                              className="mt-4 text-xs text-gray-400 hover:text-white"
+                            >
+                              Cancel
+                            </button>
+                          )}
+                        </motion.div>
+                      )}
                     </motion.div>
                   )}
                 </div>
