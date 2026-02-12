@@ -19,7 +19,9 @@ const PatientSchema = new mongoose.Schema({
     enabled: { type: Boolean, default: false },
     tokenHash: { type: String },
     expiresAt: { type: Date }
-  }
+  },
+  otp: { type: String },
+  otpExpiresAt: { type: Date }
 }, { timestamps: true, toJSON: { virtuals: true }, toObject: { virtuals: true } });
 
 PatientSchema.virtual('phone')

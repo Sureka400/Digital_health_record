@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion } from 'motion/react';
-import { Phone, QrCode, CreditCard, Mic, Heart, Users, Activity } from 'lucide-react';
+import { Mail, QrCode, CreditCard, Mic, Heart, Users, Activity } from 'lucide-react';
 import { Button } from '@/app/components/ui/button';
 import { Input } from '@/app/components/ui/input';
 import { ImageWithFallback } from '@/app/components/figma/ImageWithFallback';
@@ -15,23 +15,51 @@ interface LoginScreenProps {
 export function LoginScreen({ onLogin, language }: LoginScreenProps) {
   const { t } = useTranslation(language);
   const [loginMethod, setLoginMethod] = useState<'phone' | 'qr' | 'id'>('phone');
-  const [phoneNumber, setPhoneNumber] = useState('');
+  const [email, setEmail] = useState('');
   const [showImpactStats, setShowImpactStats] = useState(true);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [otpSent, setOtpSent] = useState(false);
+  const [otp, setOtp] = useState('');
+
+  const handleSendOTP = async () => {
+    if (!email) {
+      setError('Please enter your email address');
+      return;
+    }
+    setLoading(true);
+    setError(null);
+    try {
+      await api.post('/auth/send-otp', { email });
+      setOtpSent(true);
+    } catch (err: any) {
+      setError(err.message || 'Failed to send OTP');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleLogin = async (role: string) => {
     setLoading(true);
     setError(null);
     try {
-      // For demo purposes, we use hardcoded credentials matching the seed script
-      const email = role === 'patient' ? 'patient@demo.com' : (role === 'doctor' ? 'doctor@demo.com' : 'admin@demo.com');
-      const password = 'password123';
-      
-      const response = await api.post('/auth/login', { email, password });
-      localStorage.setItem('token', response.token);
-      localStorage.setItem('role', role);
-      onLogin(role);
+      let response;
+      if (otpSent && email) {
+        // Use real OTP verification if email was entered
+        response = await api.post('/auth/verify-otp', { email, otp });
+        localStorage.setItem('token', response.token);
+        localStorage.setItem('role', response.role);
+        onLogin(response.role);
+      } else {
+        // For demo purposes, we use hardcoded credentials matching the seed script
+        const demoEmail = role === 'patient' ? 'patient@demo.com' : (role === 'doctor' ? 'doctor@demo.com' : 'admin@demo.com');
+        const password = 'password123';
+        
+        response = await api.post('/auth/login', { email: demoEmail, password });
+        localStorage.setItem('token', response.token);
+        localStorage.setItem('role', role);
+        onLogin(role);
+      }
     } catch (err: any) {
       setError(err.message || 'Login failed');
     } finally {
@@ -146,7 +174,7 @@ export function LoginScreen({ onLogin, language }: LoginScreenProps) {
                       : 'text-gray-400 hover:text-gray-200'
                   }`}
                 >
-                  <Phone className="w-4 h-4 mx-auto mb-1" />
+                  <Mail className="w-4 h-4 mx-auto mb-1" />
                   {t('phone')}
                 </button>
                 <button
@@ -181,21 +209,37 @@ export function LoginScreen({ onLogin, language }: LoginScreenProps) {
                   className="space-y-4"
                 >
                   <Input
-                    type="tel"
-                    placeholder={t('enterMobileNumber')}
-                    value={phoneNumber}
-                    onChange={(e) => setPhoneNumber(e.target.value)}
-                    icon={<Phone className="w-5 h-5" />}
-                    label={t('mobileNumber')}
+                    type="email"
+                    placeholder={t('enterEmailAddress')}
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    icon={<Mail className="w-5 h-5" />}
+                    label={t('emailAddress')}
                   />
+
+                  {otpSent && (
+                    <motion.div
+                      initial={{ opacity: 0, y: -10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                    >
+                      <Input
+                        type="text"
+                        placeholder="Enter 6-digit OTP"
+                        value={otp}
+                        onChange={(e) => setOtp(e.target.value)}
+                        icon={<CreditCard className="w-5 h-5" />}
+                        label="OTP"
+                      />
+                    </motion.div>
+                  )}
                   
                   <button className="flex items-center gap-2 text-sm text-[#2196F3] hover:underline">
                     <Mic className="w-4 h-4" />
                     {t('useVoiceInput')}
                   </button>
 
-                  <Button variant="primary" size="lg" fullWidth onClick={() => handleLogin('patient')} disabled={loading}>
-                    {loading ? t('sending') : t('sendOTP')}
+                  <Button variant="primary" size="lg" fullWidth onClick={otpSent ? () => handleLogin('patient') : handleSendOTP} disabled={loading}>
+                    {loading ? t('sending') : (otpSent ? t('continue') : t('sendOTP'))}
                   </Button>
                 </motion.div>
               )}

@@ -25,4 +25,7 @@ router.get('/:recordId/download', authenticate, ctrl.downloadRecord);
 // ✅ QR-based record access (public / emergency)
 router.get('/qr/:qrId', ctrl.getRecordByQR);
 
+// ✅ AI Chat / Insights
+router.post('/ai/chat', authenticate, ctrl.aiChat);
+
 module.exports = router;

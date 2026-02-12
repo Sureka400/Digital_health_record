@@ -8,11 +8,12 @@ import { SystemMonitoringTab } from '@/app/components/admin/SystemMonitoringTab'
 import { useTranslation } from '@/app/utils/translations';
 
 interface AdminDashboardProps {
+  user: any;
   onLogout: () => void;
   language?: string;
 }
 
-export function AdminDashboard({ onLogout, language = 'en' }: AdminDashboardProps) {
+export function AdminDashboard({ user, onLogout, language = 'en' }: AdminDashboardProps) {
   const { t } = useTranslation(language);
   const [activeTab, setActiveTab] = useState('analytics');
 
@@ -35,7 +36,7 @@ export function AdminDashboard({ onLogout, language = 'en' }: AdminDashboardProp
               </div>
               <div>
                 <h1 className="text-2xl font-bold">{t('adminPortal')}</h1>
-                <p className="text-sm opacity-90">{t('governmentOfKerala')}</p>
+                <p className="text-sm opacity-90">{user?.name || 'Administrator'} • {t('governmentOfKerala')}</p>
               </div>
             </div>
             <div className="flex items-center gap-3">

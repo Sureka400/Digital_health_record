@@ -10,10 +10,11 @@ import { useTranslation } from '@/app/utils/translations';
 import { useLanguage } from '@/app/context/LanguageContext';
 
 interface DoctorDashboardProps {
+  user: any;
   onLogout: () => void;
 }
 
-export function DoctorDashboard({ onLogout }: DoctorDashboardProps) {
+export function DoctorDashboard({ user, onLogout }: DoctorDashboardProps) {
   const { language, setLanguage } = useLanguage();
   const { t } = useTranslation(language);
   const [activeTab, setActiveTab] = useState('scan');
@@ -46,7 +47,7 @@ export function DoctorDashboard({ onLogout }: DoctorDashboardProps) {
               </div>
               <div>
                 <h1 className="text-2xl font-bold">{t('doctorPortal')}</h1>
-                <p className="text-sm opacity-90">{t('welcomeUser')}, Dr. Anjali Menon, MBBS</p>
+                <p className="text-sm opacity-90">{t('welcomeUser')}, {user?.name || 'Doctor'}</p>
               </div>
             </div>
             <div className="flex items-center gap-3">

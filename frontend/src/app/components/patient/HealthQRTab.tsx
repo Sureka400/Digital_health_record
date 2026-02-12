@@ -6,7 +6,7 @@ import { Button } from '@/app/components/ui/button';
 import { useTranslation } from '@/app/utils/translations';
 import { useLanguage } from '@/app/context/LanguageContext';
 
-export function HealthQRTab() {
+export function HealthQRTab({ user }: { user: any }) {
   const { language } = useLanguage();
   const { t } = useTranslation(language);
 
@@ -58,11 +58,11 @@ export function HealthQRTab() {
           <div className="grid grid-cols-2 gap-3 text-sm">
             <div>
               <p className="text-muted-foreground">{t('name')}</p>
-              <p className="font-medium">Rajesh Kumar</p>
+              <p className="font-medium">{user?.name || '...'}</p>
             </div>
             <div>
               <p className="text-muted-foreground">{t('id')}</p>
-              <p className="font-medium">KL-MW-2025-12345</p>
+              <p className="font-medium">{user?._id || '...'}</p>
             </div>
             <div>
               <p className="text-muted-foreground">{t('bloodGroup')}</p>

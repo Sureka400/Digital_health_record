@@ -12,10 +12,12 @@ import { useLanguage } from '@/app/context/LanguageContext';
 
 interface PatientDashboardProps {
   onLogout: () => void;
+  language: string;
+  user: any;
 }
 
-export function PatientDashboard({ onLogout }: PatientDashboardProps) {
-  const { language, setLanguage } = useLanguage();
+export function PatientDashboard({ onLogout, language, user }: PatientDashboardProps) {
+  const { setLanguage } = useLanguage();
   const { t } = useTranslation(language);
   const [activeTab, setActiveTab] = useState('qr');
 
@@ -48,7 +50,7 @@ export function PatientDashboard({ onLogout }: PatientDashboardProps) {
               </div>
               <div>
                 <h1 className="text-2xl font-bold">{t('patientPortal')}</h1>
-                <p className="text-sm opacity-90">{t('welcomeUser')}, Ravi Kumar</p>
+                <p className="text-sm opacity-90">{t('welcomeUser')}, {user?.name || 'User'}</p>
               </div>
             </div>
             <div className="flex items-center gap-3">
@@ -114,7 +116,7 @@ export function PatientDashboard({ onLogout }: PatientDashboardProps) {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3 }}
         >
-          {activeTab === 'qr' && <HealthQRTab />}
+          {activeTab === 'qr' && <HealthQRTab user={user} />}
           {activeTab === 'records' && <HealthRecordsTab onNavigate={setActiveTab} />}
           {activeTab === 'ai' && <AIAssistantTab />}
           {activeTab === 'appointments' && <AppointmentsTab />}

@@ -5,6 +5,7 @@ import { Card } from '@/app/components/ui/card';
 import { Button } from '@/app/components/ui/button';
 import { Input } from '@/app/components/ui/input';
 import { Badge } from '@/app/components/ui/badge';
+import { api } from '@/app/utils/api';
 import { useTranslation } from '@/app/utils/translations';
 import { useLanguage } from '@/app/context/LanguageContext';
 
@@ -54,7 +55,7 @@ export function AIAssistantTab() {
     },
   ];
 
-  const handleSendMessage = () => {
+  const handleSendMessage = async () => {
     if (!inputMessage.trim()) return;
 
     const newUserMessage: Message = {
@@ -64,20 +65,27 @@ export function AIAssistantTab() {
       timestamp: new Date().toISOString(),
     };
 
-    setMessages([...messages, newUserMessage]);
+    setMessages(prev => [...prev, newUserMessage]);
+    setInputMessage('');
 
-    // Simulate AI response
-    setTimeout(() => {
+    try {
+      const res = await api.post('/records/ai/chat', { message: inputMessage });
       const aiResponse: Message = {
-        id: (Date.now() + 1).toString(),
+        id: Date.now().toString(),
         type: 'ai',
-        content: getAIResponse(inputMessage),
+        content: res.response,
         timestamp: new Date().toISOString(),
       };
       setMessages((prev) => [...prev, aiResponse]);
-    }, 1000);
-
-    setInputMessage('');
+    } catch (err: any) {
+      const errorResponse: Message = {
+        id: Date.now().toString(),
+        type: 'ai',
+        content: 'Sorry, I am having trouble connecting to the server. ' + (err.message || ''),
+        timestamp: new Date().toISOString(),
+      };
+      setMessages((prev) => [...prev, errorResponse]);
+    }
   };
 
   const getAIResponse = (question: string): string => {

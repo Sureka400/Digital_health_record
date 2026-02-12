@@ -230,3 +230,33 @@ exports.downloadRecord = async (req, res, next) => {
     res.download(localPath, `${record.title || 'record'}${path.extname(localPath)}`);
   } catch (err) { next(err); }
 };
+
+// AI Chat endpoint (Mock implementation)
+exports.aiChat = async (req, res, next) => {
+  try {
+    const { message } = req.body;
+    const userId = req.user.id;
+    
+    // Fetch user records to provide "context"
+    const records = await HealthRecord.find({ patient: userId });
+    const recordsSummary = records.map(r => `${r.title} (${r.category}): ${r.description}`).join('\n');
+
+    let response = "";
+    const lowerMsg = message.toLowerCase();
+
+    if (lowerMsg.includes('report') || lowerMsg.includes('summary')) {
+      response = `Based on your ${records.length} records, you have: \n` + 
+                 records.map(r => `- ${r.title} at ${r.hospital}`).join('\n') +
+                 `\n\nYour health seems to be well documented. Is there a specific report you want me to explain?`;
+    } else if (lowerMsg.includes('risk')) {
+      response = "I've analyzed your medical history. Currently, your vital signs and lab results from " + 
+                 (records[0] ? records[0].hospital : "your visits") + 
+                 " show low risk for acute conditions. However, I recommend regular checkups for your " + 
+                 (records.find(r => r.category === 'lab') ? "blood parameters." : "general health.");
+    } else {
+      response = "I am your AI Health Assistant. I can see you have " + records.length + " medical records. I can help you summarize them, explain medical terms, or track your health trends. What would you like to know?";
+    }
+
+    res.json({ response });
+  } catch (err) { next(err); }
+};
