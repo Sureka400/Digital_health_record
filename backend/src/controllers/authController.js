@@ -55,28 +55,47 @@ exports.login = async (req, res, next) => {
   } catch (err) { next(err); }
 };
 
-exports.sendOTPValidators = [ body('email').isEmail() ];
+exports.sendOTPValidators = [ 
+  body('email').isEmail(),
+  body('role').optional().isIn(['PATIENT', 'DOCTOR', 'ADMIN'])
+];
 
 exports.sendOTP = async (req, res, next) => {
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) return res.status(400).json({ errors: errors.array() });
 
-    const { email } = req.body;
+    const { email, role } = req.body;
+
+    // Role-based email validation
+    if (role === 'DOCTOR') {
+      if (email !== 'soniyav.aids2024@citchennai.net') {
+        return res.status(403).json({ error: 'Access Denied: Unauthorized email for Doctor role' });
+      }
+    } else if (role === 'ADMIN') {
+      if (email !== 'surekar.aids2024@citchennai.net') {
+        return res.status(403).json({ error: 'Access Denied: Unauthorized email for Admin role' });
+      }
+    }
+
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
     let user = await Patient.findOne({ email });
 
     if (user) {
+      // Update role if provided and user exists
+      if (role && ['PATIENT', 'DOCTOR', 'ADMIN'].includes(role)) {
+        user.role = role;
+      }
       user.otp = otp;
       user.otpExpiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
       await user.save();
     } else {
-      // If user doesn't exist, create a temporary one for demo purposes
+      // If user doesn't exist, create one with the specified role
       user = new Patient({
         name: email.split('@')[0],
         email: email,
-        password: 'password123',
-        role: 'PATIENT',
+        password: 'password123', // Default password for OTP-based login
+        role: role || 'PATIENT',
         otp: otp,
         otpExpiresAt: new Date(Date.now() + 10 * 60 * 1000)
       });
@@ -84,7 +103,7 @@ exports.sendOTP = async (req, res, next) => {
     }
 
     await sendOTPEmail(email, otp);
-    console.log(`[OTP] Sent ${otp} to ${email}`);
+    console.log(`[OTP] Sent ${otp} to ${email} for role ${role}`);
     res.json({ message: 'OTP sent successfully', email });
   } catch (err) {
     next(err);

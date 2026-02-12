@@ -21,8 +21,13 @@ export function LoginScreen({ onLogin, language }: LoginScreenProps) {
   const [error, setError] = useState<string | null>(null);
   const [otpSent, setOtpSent] = useState(false);
   const [otp, setOtp] = useState('');
+  const [selectedRole, setSelectedRole] = useState<string | null>(null);
 
   const handleSendOTP = async () => {
+    if (!selectedRole) {
+      setError('Please select a role first');
+      return;
+    }
     if (!email) {
       setError('Please enter your email address');
       return;
@@ -30,7 +35,7 @@ export function LoginScreen({ onLogin, language }: LoginScreenProps) {
     setLoading(true);
     setError(null);
     try {
-      await api.post('/auth/send-otp', { email });
+      await api.post('/auth/send-otp', { email, role: selectedRole.toUpperCase() });
       setOtpSent(true);
     } catch (err: any) {
       setError(err.message || 'Failed to send OTP');
@@ -51,7 +56,7 @@ export function LoginScreen({ onLogin, language }: LoginScreenProps) {
         localStorage.setItem('role', response.role);
         onLogin(response.role);
       } else {
-        // For demo purposes, we use hardcoded credentials matching the seed script
+        // Fallback for non-OTP login (if any)
         const demoEmail = role === 'patient' ? 'patient@demo.com' : (role === 'doctor' ? 'doctor@demo.com' : 'admin@demo.com');
         const password = 'password123';
         
@@ -164,139 +169,174 @@ export function LoginScreen({ onLogin, language }: LoginScreenProps) {
                 </div>
               )}
 
-              {/* Login Method Selection */}
-              <div className="grid grid-cols-3 gap-2 mb-6 p-1 bg-zinc-800/50 rounded-lg">
-                <button
-                  onClick={() => setLoginMethod('phone')}
-                  className={`py-2.5 rounded-md text-sm font-medium transition-all ${
-                    loginMethod === 'phone'
-                      ? 'bg-zinc-700 shadow-sm text-[#10b981]'
-                      : 'text-gray-400 hover:text-gray-200'
-                  }`}
-                >
-                  <Mail className="w-4 h-4 mx-auto mb-1" />
-                  {t('phone')}
-                </button>
-                <button
-                  onClick={() => setLoginMethod('qr')}
-                  className={`py-2.5 rounded-md text-sm font-medium transition-all ${
-                    loginMethod === 'qr'
-                      ? 'bg-zinc-700 shadow-sm text-[#10b981]'
-                      : 'text-gray-400 hover:text-gray-200'
-                  }`}
-                >
-                  <QrCode className="w-4 h-4 mx-auto mb-1" />
-                  {t('qrCode')}
-                </button>
-                <button
-                  onClick={() => setLoginMethod('id')}
-                  className={`py-2.5 rounded-md text-sm font-medium transition-all ${
-                    loginMethod === 'id'
-                      ? 'bg-zinc-700 shadow-sm text-[#10b981]'
-                      : 'text-gray-400 hover:text-gray-200'
-                  }`}
-                >
-                  <CreditCard className="w-4 h-4 mx-auto mb-1" />
-                  {t('govId')}
-                </button>
-              </div>
+              {/* Step 1: Role Selection */}
+              {!selectedRole ? (
+                <div className="space-y-4">
+                  <p className="text-sm text-gray-400 mb-2">Select your role to continue:</p>
+                  <div className="grid grid-cols-1 gap-3">
+                    <Button 
+                      variant="outline" 
+                      className="justify-start h-14 text-lg" 
+                      onClick={() => setSelectedRole('patient')}
+                    >
+                      <Users className="w-5 h-5 mr-3" />
+                      {t('patient')}
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      className="justify-start h-14 text-lg" 
+                      onClick={() => setSelectedRole('doctor')}
+                    >
+                      <Activity className="w-5 h-5 mr-3" />
+                      {t('doctor')}
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      className="justify-start h-14 text-lg" 
+                      onClick={() => setSelectedRole('admin')}
+                    >
+                      <CreditCard className="w-5 h-5 mr-3" />
+                      {t('admin')}
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-6">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm font-medium text-[#10b981] capitalize flex items-center gap-2">
+                      Logging in as {selectedRole}
+                    </span>
+                    <button 
+                      onClick={() => {
+                        setSelectedRole(null);
+                        setOtpSent(false);
+                        setError(null);
+                      }}
+                      className="text-xs text-gray-500 hover:text-gray-300"
+                    >
+                      Change Role
+                    </button>
+                  </div>
 
-              {/* Phone Login */}
-              {loginMethod === 'phone' && (
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  className="space-y-4"
-                >
-                  <Input
-                    type="email"
-                    placeholder={t('enterEmailAddress')}
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    icon={<Mail className="w-5 h-5" />}
-                    label={t('emailAddress')}
-                  />
+                  {/* Login Method Selection (Only for Patient maybe, but user didn't specify, so keeping it or simplifying) */}
+                  <div className="grid grid-cols-3 gap-2 mb-6 p-1 bg-zinc-800/50 rounded-lg">
+                    <button
+                      onClick={() => setLoginMethod('phone')}
+                      className={`py-2.5 rounded-md text-sm font-medium transition-all ${
+                        loginMethod === 'phone'
+                          ? 'bg-zinc-700 shadow-sm text-[#10b981]'
+                          : 'text-gray-400 hover:text-gray-200'
+                      }`}
+                    >
+                      <Mail className="w-4 h-4 mx-auto mb-1" />
+                      {t('phone')}
+                    </button>
+                    <button
+                      onClick={() => setLoginMethod('qr')}
+                      className={`py-2.5 rounded-md text-sm font-medium transition-all ${
+                        loginMethod === 'qr'
+                          ? 'bg-zinc-700 shadow-sm text-[#10b981]'
+                          : 'text-gray-400 hover:text-gray-200'
+                      }`}
+                    >
+                      <QrCode className="w-4 h-4 mx-auto mb-1" />
+                      {t('qrCode')}
+                    </button>
+                    <button
+                      onClick={() => setLoginMethod('id')}
+                      className={`py-2.5 rounded-md text-sm font-medium transition-all ${
+                        loginMethod === 'id'
+                          ? 'bg-zinc-700 shadow-sm text-[#10b981]'
+                          : 'text-gray-400 hover:text-gray-200'
+                      }`}
+                    >
+                      <CreditCard className="w-4 h-4 mx-auto mb-1" />
+                      {t('govId')}
+                    </button>
+                  </div>
 
-                  {otpSent && (
+                  {/* Phone Login */}
+                  {loginMethod === 'phone' && (
                     <motion.div
-                      initial={{ opacity: 0, y: -10 }}
-                      animate={{ opacity: 1, y: 0 }}
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      className="space-y-4"
+                    >
+                      <Input
+                        type="email"
+                        placeholder={t('enterEmailAddress')}
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        icon={<Mail className="w-5 h-5" />}
+                        label={t('emailAddress')}
+                      />
+
+                      {otpSent && (
+                        <motion.div
+                          initial={{ opacity: 0, y: -10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                        >
+                          <Input
+                            type="text"
+                            placeholder="Enter 6-digit OTP"
+                            value={otp}
+                            onChange={(e) => setOtp(e.target.value)}
+                            icon={<CreditCard className="w-5 h-5" />}
+                            label="OTP"
+                          />
+                        </motion.div>
+                      )}
+                      
+                      <button className="flex items-center gap-2 text-sm text-[#2196F3] hover:underline">
+                        <Mic className="w-4 h-4" />
+                        {t('useVoiceInput')}
+                      </button>
+
+                      <Button variant="primary" size="lg" fullWidth onClick={otpSent ? () => handleLogin(selectedRole) : handleSendOTP} disabled={loading}>
+                        {loading ? t('sending') : (otpSent ? t('continue') : t('sendOTP'))}
+                      </Button>
+                    </motion.div>
+                  )}
+
+                  {/* QR Login */}
+                  {loginMethod === 'qr' && (
+                    <motion.div
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      className="text-center py-6"
+                    >
+                      <div className="w-48 h-48 mx-auto bg-muted rounded-xl flex items-center justify-center mb-4">
+                        <QrCode className="w-24 h-24 text-muted-foreground" />
+                      </div>
+                      <p className="text-sm text-muted-foreground mb-4">
+                        {t('scanQRToSignIn')}
+                      </p>
+                      <Button variant="outline" size="lg" fullWidth onClick={() => handleLogin(selectedRole)} disabled={loading}>
+                        {loading ? t('authenticating') : t('openCamera')}
+                      </Button>
+                    </motion.div>
+                  )}
+
+                  {/* Gov ID Login */}
+                  {loginMethod === 'id' && (
+                    <motion.div
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      className="space-y-4"
                     >
                       <Input
                         type="text"
-                        placeholder="Enter 6-digit OTP"
-                        value={otp}
-                        onChange={(e) => setOtp(e.target.value)}
+                        placeholder={t('enterGovId')}
                         icon={<CreditCard className="w-5 h-5" />}
-                        label="OTP"
+                        label={t('govId')}
                       />
+                      <Button variant="primary" size="lg" fullWidth onClick={() => handleLogin(selectedRole)} disabled={loading}>
+                        {loading ? t('processing') : t('continue')}
+                      </Button>
                     </motion.div>
                   )}
-                  
-                  <button className="flex items-center gap-2 text-sm text-[#2196F3] hover:underline">
-                    <Mic className="w-4 h-4" />
-                    {t('useVoiceInput')}
-                  </button>
-
-                  <Button variant="primary" size="lg" fullWidth onClick={otpSent ? () => handleLogin('patient') : handleSendOTP} disabled={loading}>
-                    {loading ? t('sending') : (otpSent ? t('continue') : t('sendOTP'))}
-                  </Button>
-                </motion.div>
-              )}
-
-              {/* QR Login */}
-              {loginMethod === 'qr' && (
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  className="text-center py-6"
-                >
-                  <div className="w-48 h-48 mx-auto bg-muted rounded-xl flex items-center justify-center mb-4">
-                    <QrCode className="w-24 h-24 text-muted-foreground" />
-                  </div>
-                  <p className="text-sm text-muted-foreground mb-4">
-                    {t('scanQRToSignIn')}
-                  </p>
-                  <Button variant="outline" size="lg" fullWidth onClick={() => handleLogin('patient')} disabled={loading}>
-                    {loading ? t('authenticating') : t('openCamera')}
-                  </Button>
-                </motion.div>
-              )}
-
-              {/* Gov ID Login */}
-              {loginMethod === 'id' && (
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  className="space-y-4"
-                >
-                  <Input
-                    type="text"
-                    placeholder={t('enterGovId')}
-                    icon={<CreditCard className="w-5 h-5" />}
-                    label={t('govId')}
-                  />
-                  <Button variant="primary" size="lg" fullWidth onClick={() => handleLogin('patient')} disabled={loading}>
-                    {loading ? t('processing') : t('continue')}
-                  </Button>
-                </motion.div>
-              )}
-
-              {/* Quick Role Selection for Demo */}
-              <div className="mt-8 pt-6 border-t border-border">
-                <p className="text-xs text-muted-foreground mb-3 text-center">{t('quickDemoAccess')}</p>
-                <div className="grid grid-cols-3 gap-2">
-                  <Button variant="outline" size="sm" onClick={() => handleLogin('patient')} disabled={loading}>
-                    {t('patient')}
-                  </Button>
-                  <Button variant="outline" size="sm" onClick={() => handleLogin('doctor')} disabled={loading}>
-                    {t('doctor')}
-                  </Button>
-                  <Button variant="outline" size="sm" onClick={() => handleLogin('admin')} disabled={loading}>
-                    {t('admin')}
-                  </Button>
                 </div>
-              </div>
+              )}
             </div>
 
             {/* Accessibility Features */}
