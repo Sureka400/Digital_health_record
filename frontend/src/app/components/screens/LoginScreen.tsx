@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
 import { motion } from 'motion/react';
-import { Mail, QrCode, CreditCard, Mic, Heart, Users, Activity } from 'lucide-react';
+import { Mail, QrCode, CreditCard, Mic, Heart, Users, Activity, Loader2 } from 'lucide-react';
 import { Button } from '@/app/components/ui/button';
 import { Input } from '@/app/components/ui/input';
 import { ImageWithFallback } from '@/app/components/figma/ImageWithFallback';
 import { api } from '@/app/utils/api';
 import { useTranslation } from '@/app/utils/translations';
+import { useVoice } from '@/app/hooks/useVoice';
 
 interface LoginScreenProps {
   onLogin: (role: string) => void;
@@ -22,6 +23,16 @@ export function LoginScreen({ onLogin, language }: LoginScreenProps) {
   const [otpSent, setOtpSent] = useState(false);
   const [otp, setOtp] = useState('');
   const [selectedRole, setSelectedRole] = useState<string | null>(null);
+
+  const { isListening, startListening } = useVoice((result) => {
+    // Clean up result (remove spaces if it's an email)
+    const cleanedResult = result.toLowerCase().replace(/\s/g, '');
+    if (otpSent) {
+      setOtp(cleanedResult);
+    } else {
+      setEmail(cleanedResult);
+    }
+  }, language);
 
   const handleSendOTP = async () => {
     if (!selectedRole) {
@@ -287,9 +298,17 @@ export function LoginScreen({ onLogin, language }: LoginScreenProps) {
                         </motion.div>
                       )}
                       
-                      <button className="flex items-center gap-2 text-sm text-[#2196F3] hover:underline">
-                        <Mic className="w-4 h-4" />
-                        {t('useVoiceInput')}
+                      <button 
+                        onClick={startListening}
+                        disabled={isListening}
+                        className="flex items-center gap-2 text-sm text-[#2196F3] hover:underline disabled:opacity-50"
+                      >
+                        {isListening ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <Mic className="w-4 h-4" />
+                        )}
+                        {isListening ? 'Listening...' : t('useVoiceInput')}
                       </button>
 
                       <Button variant="primary" size="lg" fullWidth onClick={otpSent ? () => handleLogin(selectedRole) : handleSendOTP} disabled={loading}>

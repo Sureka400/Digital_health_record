@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion } from 'motion/react';
-import { Sparkles, Mic, Send, Bell, Volume2, MessageCircle } from 'lucide-react';
+import { Sparkles, Mic, Send, Bell, Volume2, MessageCircle, Loader2 } from 'lucide-react';
 import { Card } from '@/app/components/ui/card';
 import { Button } from '@/app/components/ui/button';
 import { Input } from '@/app/components/ui/input';
@@ -8,6 +8,7 @@ import { Badge } from '@/app/components/ui/badge';
 import { api } from '@/app/utils/api';
 import { useTranslation } from '@/app/utils/translations';
 import { useLanguage } from '@/app/context/LanguageContext';
+import { useVoice } from '@/app/hooks/useVoice';
 
 interface Message {
   id: string;
@@ -29,6 +30,10 @@ export function AIAssistantTab() {
     },
   ]);
   const [inputMessage, setInputMessage] = useState('');
+
+  const { isListening, startListening } = useVoice((result) => {
+    setInputMessage(result);
+  }, language);
 
   const quickActions = [
     '📋 Explain my latest report',
@@ -234,8 +239,16 @@ export function AIAssistantTab() {
 
         {/* Input */}
         <div className="flex gap-2">
-          <button className="p-3 bg-muted rounded-lg hover:bg-accent transition-all">
-            <Mic className="w-5 h-5 text-muted-foreground" />
+          <button 
+            onClick={startListening}
+            disabled={isListening}
+            className="p-3 bg-muted rounded-lg hover:bg-accent transition-all disabled:opacity-50"
+          >
+            {isListening ? (
+              <Loader2 className="w-5 h-5 animate-spin text-primary" />
+            ) : (
+              <Mic className="w-5 h-5 text-muted-foreground" />
+            )}
           </button>
           <input
             type="text"
