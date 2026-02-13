@@ -16,6 +16,9 @@ router.get('/:recordId', authenticate, ctrl.getRecordById);
 // ✅ Create QR token for a record
 router.post('/:recordId/qr', authenticate, ctrl.createQrToken);
 
+// ✅ Get permanent QR token for patient profile
+router.get('/profile/qr', authenticate, ctrl.getPatientProfileQr);
+
 // ✅ Toggle consent for a record
 router.patch('/:recordId/consent', authenticate, ctrl.toggleConsent);
 

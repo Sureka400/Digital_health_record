@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion } from 'motion/react';
-import { QrCode, FileText, MessageCircle, Calendar, Gift, AlertCircle, LogOut, Globe, User } from 'lucide-react';
+import { QrCode, FileText, MessageCircle, Calendar, Gift, AlertCircle, LogOut, Globe, User, Camera } from 'lucide-react';
 import { HealthQRTab } from '@/app/components/patient/HealthQRTab';
 import { HealthRecordsTab } from '@/app/components/patient/HealthRecordsTab';
 import { AIAssistantTab } from '@/app/components/patient/AIAssistantTab';
@@ -9,6 +9,16 @@ import { SchemesTab } from '@/app/components/patient/SchemesTab';
 import { EmergencyTab } from '@/app/components/patient/EmergencyTab';
 import { useTranslation } from '@/app/utils/translations';
 import { useLanguage } from '@/app/context/LanguageContext';
+import { 
+  Dialog, 
+  DialogContent, 
+  DialogHeader, 
+  DialogTitle, 
+  DialogDescription,
+  DialogFooter
+} from '@/app/components/ui/dialog';
+import { Button } from '@/app/components/ui/button';
+import { Input } from '@/app/components/ui/input';
 
 interface PatientDashboardProps {
   onLogout: () => void;
@@ -20,6 +30,15 @@ export function PatientDashboard({ onLogout, language, user }: PatientDashboardP
   const { setLanguage } = useLanguage();
   const { t } = useTranslation(language);
   const [activeTab, setActiveTab] = useState('qr');
+  const [showScanDialog, setShowScanDialog] = useState(false);
+  const [scanToken, setScanToken] = useState('');
+
+  const handleScanSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (scanToken) {
+      window.location.href = `/qr/${scanToken}`;
+    }
+  };
 
   const tabs = [
     { id: 'qr', name: t('myHealthQR'), icon: QrCode, color: '#0b6e4f' },
@@ -54,6 +73,13 @@ export function PatientDashboard({ onLogout, language, user }: PatientDashboardP
               </div>
             </div>
             <div className="flex items-center gap-3">
+              <button
+                onClick={() => setShowScanDialog(true)}
+                className="flex items-center gap-2 px-4 py-2 bg-white/20 hover:bg-white/30 rounded-lg transition-all border border-white/30"
+              >
+                <Camera className="w-5 h-5" />
+                <span className="hidden md:inline">{t('scanQR')}</span>
+              </button>
               <div className="relative group">
                 <button className="p-2 hover:bg-white/10 rounded-lg transition-all flex items-center gap-1">
                   <Globe className="w-5 h-5" />
@@ -124,6 +150,41 @@ export function PatientDashboard({ onLogout, language, user }: PatientDashboardP
           {activeTab === 'emergency' && <EmergencyTab />}
         </motion.div>
       </div>
+
+      <Dialog open={showScanDialog} onOpenChange={setShowScanDialog}>
+        <DialogContent className="sm:max-w-md bg-zinc-950 border-zinc-800 text-white">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <QrCode className="w-5 h-5 text-[#0b6e4f]" /> {t('scanHealthQR')}
+            </DialogTitle>
+            <DialogDescription>
+              {t('scanQRDesc')}
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="flex flex-col items-center justify-center py-6">
+            <div className="w-48 h-48 border-2 border-dashed border-zinc-700 rounded-2xl flex flex-col items-center justify-center mb-6 bg-zinc-900/50">
+              <Camera className="w-12 h-12 text-zinc-600 mb-2" />
+              <p className="text-xs text-zinc-500">{t('Camera Preview')}</p>
+            </div>
+            
+            <form onSubmit={handleScanSubmit} className="w-full space-y-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-zinc-400">{t('Or enter token manually')}</label>
+                <Input 
+                  value={scanToken}
+                  onChange={(e) => setScanToken(e.target.value)}
+                  placeholder="Paste QR token here..."
+                  className="bg-zinc-900 border-zinc-800 text-white"
+                />
+              </div>
+              <Button type="submit" className="w-full bg-[#0b6e4f] hover:bg-[#0b6e4f]/90 text-white">
+                {t('View Record Details')}
+              </Button>
+            </form>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Footer */}
       <div className="bg-zinc-900/80 backdrop-blur-xl border-t border-zinc-800 mt-12">

@@ -7,6 +7,8 @@ import { AdminDashboard } from '@/app/components/dashboards/AdminDashboard';
 import { useLanguage } from '@/app/context/LanguageContext';
 import { api } from '@/app/utils/api';
 
+import { RecordQRView } from '@/app/components/patient/RecordQRView';
+
 type AppScreen = 'language' | 'login' | 'dashboard';
 type UserRole = 'patient' | 'doctor' | 'admin' | null;
 
@@ -15,8 +17,18 @@ export default function App() {
   const { language, setLanguage } = useLanguage();
   const [userRole, setUserRole] = useState<UserRole>(null);
   const [user, setUser] = useState<any>(null);
+  const [qrToken, setQrToken] = useState<string | null>(null);
 
   useEffect(() => {
+    // Check for QR token in URL
+    const path = window.location.pathname;
+    if (path.startsWith('/qr/')) {
+      const token = path.split('/qr/')[1];
+      if (token) {
+        setQrToken(token);
+      }
+    }
+
     const token = localStorage.getItem('token');
     const role = localStorage.getItem('role');
     if (token && role) {
@@ -58,6 +70,18 @@ export default function App() {
 
   return (
     <div className="app">
+      {/* QR Record View - Overlays everything when scanning */}
+      {qrToken && (
+        <RecordQRView 
+          token={qrToken} 
+          language={language} 
+          onClose={() => {
+            setQrToken(null);
+            window.history.pushState({}, '', '/');
+          }} 
+        />
+      )}
+
       {/* Language Selection Screen */}
       {currentScreen === 'language' && (
         <LanguageSelectionScreen onLanguageSelect={handleLanguageSelect} />

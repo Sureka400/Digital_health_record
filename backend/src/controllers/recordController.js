@@ -12,6 +12,15 @@ exports.getRecords = async (req, res, next) => {
     if (userRole === 'PATIENT') {
       // Patients see only their own records
       const records = await HealthRecord.find({ patient: userId }).sort({ createdAt: -1 });
+      
+      // Migrate: populate missing qrTokens
+      for (const rec of records) {
+        if (!rec.qrToken) {
+          rec.qrToken = signToken({ type: 'qr', recordId: rec._id, patientId: rec.patient }, { expiresIn: '3650d' });
+          await rec.save();
+        }
+      }
+
       return res.json({ records });
     }
     
@@ -97,17 +106,28 @@ exports.getRecordById = async (req, res, next) => {
   } catch (err) { next(err); }
 };
 
-// Get record by QR token (public endpoint)
+// Get records by QR token (public endpoint) - handles both single record and patient profile
 exports.getRecordByQR = async (req, res, next) => {
   try {
     const { qrId } = req.params;
     const payload = verifyToken(qrId);
-    if (!payload || payload.type !== 'qr') return res.status(401).json({ error: 'Invalid QR token' });
+    if (!payload || !['qr', 'patient_qr'].includes(payload.type)) {
+      return res.status(401).json({ error: 'Invalid or expired QR token' });
+    }
     
-    const record = await HealthRecord.findById(payload.recordId).select('-__v');
-    if (!record) return res.status(404).json({ error: 'Record not found' });
+    if (payload.type === 'qr') {
+      const record = await HealthRecord.findById(payload.recordId).select('-__v');
+      if (!record) return res.status(404).json({ error: 'Record not found' });
+      return res.json({ type: 'single', record });
+    }
+
+    if (payload.type === 'patient_qr') {
+      const records = await HealthRecord.find({ patient: payload.patientId }).sort({ createdAt: -1 }).select('-__v');
+      const patient = await Patient.findById(payload.patientId).select('name abhaId');
+      return res.json({ type: 'patient', records, patient });
+    }
     
-    res.json({ record });
+    res.status(400).json({ error: 'Unknown QR type' });
   } catch (err) { next(err); }
 };
 
@@ -146,18 +166,40 @@ exports.createRecord = async (req, res, next) => {
     };
     const rec = new HealthRecord(payload);
     await rec.save();
+    
+    // Generate and save QR token for the record
+    const qrToken = signToken({ type: 'qr', recordId: rec._id, patientId: rec.patient }, { expiresIn: '3650d' }); // 10 years
+    rec.qrToken = qrToken;
+    await rec.save();
+
     res.status(201).json({ record: rec });
   } catch (err) { next(err); }
 };
 
-// Create a QR token for a record (short-lived)
+// Create or Get a QR token for a record (long-lived)
 exports.createQrToken = async (req, res, next) => {
   try {
     const { recordId } = req.params;
     const record = await HealthRecord.findById(recordId);
     if (!record) return res.status(404).json({ error: 'Not found' });
     if (req.user.role === 'PATIENT' && req.user.id !== String(record.patient)) return res.status(403).json({ error: 'Forbidden' });
-    const token = signToken({ type: 'qr', recordId: record._id, patientId: record.patient }, { expiresIn: '15m' });
+    
+    // Use existing token if available, else generate new one
+    if (!record.qrToken) {
+      record.qrToken = signToken({ type: 'qr', recordId: record._id, patientId: record.patient }, { expiresIn: '3650d' });
+      await record.save();
+    }
+    
+    res.json({ qrToken: record.qrToken });
+  } catch (err) { next(err); }
+};
+
+// Create/Get a permanent QR token for the patient's entire profile
+exports.getPatientProfileQr = async (req, res, next) => {
+  try {
+    const patientId = req.user.id;
+    // Permanent-ish token (10 years)
+    const token = signToken({ type: 'patient_qr', patientId }, { expiresIn: '3650d' });
     res.json({ qrToken: token });
   } catch (err) { next(err); }
 };

@@ -1,14 +1,36 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
-import { QrCode, Download, Share2, Wifi } from 'lucide-react';
+import { QrCode, Download, Share2, Wifi, Loader2 } from 'lucide-react';
 import { Card } from '@/app/components/ui/card';
 import { Button } from '@/app/components/ui/button';
 import { useTranslation } from '@/app/utils/translations';
 import { useLanguage } from '@/app/context/LanguageContext';
+import { api } from '@/app/utils/api';
 
 export function HealthQRTab({ user }: { user: any }) {
   const { language } = useLanguage();
   const { t } = useTranslation(language);
+  const [qrToken, setQrToken] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchQrToken();
+  }, []);
+
+  const fetchQrToken = async () => {
+    try {
+      const res = await api.get('/records/profile/qr');
+      setQrToken(res.qrToken);
+    } catch (err) {
+      console.error('Failed to fetch QR token', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const qrUrl = qrToken 
+    ? `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(`${window.location.origin}/qr/${qrToken}`)}`
+    : null;
 
   return (
     <div className="space-y-6">
@@ -25,7 +47,7 @@ export function HealthQRTab({ user }: { user: any }) {
 
         {/* Animated QR Code */}
         <motion.div
-          className="w-64 h-64 mx-auto bg-zinc-800/50 border-4 border-[#0b6e4f] rounded-2xl p-4 mb-6 relative overflow-hidden"
+          className="w-64 h-64 mx-auto bg-white border-4 border-[#0b6e4f] rounded-2xl p-4 mb-6 relative overflow-hidden flex items-center justify-center"
           animate={{
             boxShadow: [
               '0 0 0 0 rgba(11, 110, 79, 0.4)',
@@ -37,20 +59,28 @@ export function HealthQRTab({ user }: { user: any }) {
             repeat: Infinity,
           }}
         >
-          <QrCode className="w-full h-full text-foreground" />
+          {loading ? (
+            <Loader2 className="w-12 h-12 text-[#0b6e4f] animate-spin" />
+          ) : qrUrl ? (
+            <img src={qrUrl} alt="Health QR Code" className="w-full h-full" />
+          ) : (
+            <QrCode className="w-full h-full text-foreground" />
+          )}
           
           {/* Pulse effect */}
-          <motion.div
-            className="absolute inset-0 border-4 border-[#0b6e4f] rounded-2xl"
-            animate={{
-              scale: [1, 1.1],
-              opacity: [0.5, 0],
-            }}
-            transition={{
-              duration: 2,
-              repeat: Infinity,
-            }}
-          />
+          {!loading && (
+            <motion.div
+              className="absolute inset-0 border-4 border-[#0b6e4f] rounded-2xl"
+              animate={{
+                scale: [1, 1.1],
+                opacity: [0.5, 0],
+              }}
+              transition={{
+                duration: 2,
+                repeat: Infinity,
+              }}
+            />
+          )}
         </motion.div>
 
         {/* Patient Info */}

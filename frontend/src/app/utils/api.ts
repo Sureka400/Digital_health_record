@@ -1,4 +1,7 @@
-const API_URL = (import.meta.env.VITE_API_URL as string) || 'http://localhost:4000/api';
+const API_URL = (import.meta.env.VITE_API_URL as string) || 
+  (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
+    ? 'http://localhost:4000/api' 
+    : `${window.location.protocol}//${window.location.hostname}:4000/api`);
 
 async function request(endpoint: string, options: RequestInit = {}) {
   const token = localStorage.getItem('token');
