@@ -74,7 +74,15 @@ export function AIAssistantTab() {
     setInputMessage('');
 
     try {
-      const res = await api.post('/records/ai/chat', { message: inputMessage });
+      const history = messages.map(m => ({
+        role: m.type === 'user' ? 'user' : 'assistant',
+        content: m.content
+      }));
+      
+      const res = await api.post('/records/ai/chat', { 
+        message: inputMessage,
+        history: history
+      });
       const aiResponse: Message = {
         id: Date.now().toString(),
         type: 'ai',
@@ -91,24 +99,6 @@ export function AIAssistantTab() {
       };
       setMessages((prev) => [...prev, errorResponse]);
     }
-  };
-
-  const getAIResponse = (question: string): string => {
-    const lowerQuestion = question.toLowerCase();
-    
-    if (lowerQuestion.includes('report') || lowerQuestion.includes('latest')) {
-      return '📊 Your latest blood test from Jan 25 shows:\n\n✅ Hemoglobin: 13.5 g/dL (Normal)\n✅ Blood Sugar (Fasting): 105 mg/dL (Well controlled)\n⚠️ Cholesterol: 215 mg/dL (Slightly high)\n\nYour diabetes is well-managed! However, we should watch your cholesterol. Try to reduce oily foods and increase vegetables. Would you like diet suggestions?';
-    }
-    
-    if (lowerQuestion.includes('medication') || lowerQuestion.includes('medicine')) {
-      return '💊 Your Daily Medication Schedule:\n\n🌅 Morning (8 AM):\n- Metformin 500mg (for diabetes)\n- Multivitamin\n\n🌙 Evening (8 PM):\n- Metformin 500mg\n\nRemember to take medicines after meals! I\'ll send you reminders. 🔔';
-    }
-    
-    if (lowerQuestion.includes('risk') || lowerQuestion.includes('health')) {
-      return '🎯 AI Health Risk Analysis:\n\n✅ Low Risk: Heart disease (due to good BP control)\n⚠️ Medium Risk: High cholesterol needs monitoring\n✅ Well Managed: Type 2 Diabetes\n\nRecommendations:\n1. Continue current medications\n2. Reduce salt and oil intake\n3. Walk 30 mins daily\n4. Next checkup in 3 months';
-    }
-    
-    return 'I understand your question. As your AI assistant, I can help with:\n\n📋 Report explanations\n💊 Medication schedules\n⚠️ Health risk predictions\n🏥 Hospital information\n\nCould you please be more specific about what you\'d like to know?';
   };
 
   const handleQuickAction = (action: string) => {

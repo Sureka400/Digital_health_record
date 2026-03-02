@@ -2,6 +2,12 @@ const HealthRecord = require('../models/HealthRecord');
 const Consent = require('../models/Consent');
 const Patient = require('../models/Patient');
 const { signToken, verifyToken } = require('../utils/jwt');
+const { OpenAI } = require('openai');
+
+const openai = new OpenAI({
+  apiKey: process.env.AI_API_KEY,
+  baseURL: process.env.AI_BASE_URL || 'https://api.groq.com/openai/v1',
+});
 
 // Get all records for the logged-in patient (their own or shared with them)
 exports.getRecords = async (req, res, next) => {
@@ -273,32 +279,38 @@ exports.downloadRecord = async (req, res, next) => {
   } catch (err) { next(err); }
 };
 
-// AI Chat endpoint (Mock implementation)
+// AI Chat endpoint (Uses real AI integration with patient records for context)
 exports.aiChat = async (req, res, next) => {
   try {
-    const { message } = req.body;
+    const { message, history } = req.body;
     const userId = req.user.id;
     
     // Fetch user records to provide "context"
-    const records = await HealthRecord.find({ patient: userId });
+    const records = await HealthRecord.find({ patient: userId }).sort({ createdAt: -1 }).limit(10);
     const recordsSummary = records.map(r => `${r.title} (${r.category}): ${r.description}`).join('\n');
 
-    let response = "";
-    const lowerMsg = message.toLowerCase();
+    const messages = [
+      { 
+        role: 'system', 
+        content: `You are a helpful AI health assistant for a Digital Health Record application. 
+        Current user health records context:
+        ${recordsSummary || 'No records found.'}
+        
+        Answer questions based on this context if applicable, but also answer general health questions like ChatGPT. 
+        Always remind users to consult with a doctor for serious medical issues.` 
+      },
+      ...(history || []),
+      { role: 'user', content: message }
+    ];
 
-    if (lowerMsg.includes('report') || lowerMsg.includes('summary')) {
-      response = `Based on your ${records.length} records, you have: \n` + 
-                 records.map(r => `- ${r.title} at ${r.hospital}`).join('\n') +
-                 `\n\nYour health seems to be well documented. Is there a specific report you want me to explain?`;
-    } else if (lowerMsg.includes('risk')) {
-      response = "I've analyzed your medical history. Currently, your vital signs and lab results from " + 
-                 (records[0] ? records[0].hospital : "your visits") + 
-                 " show low risk for acute conditions. However, I recommend regular checkups for your " + 
-                 (records.find(r => r.category === 'lab') ? "blood parameters." : "general health.");
-    } else {
-      response = "I am your AI Health Assistant. I can see you have " + records.length + " medical records. I can help you summarize them, explain medical terms, or track your health trends. What would you like to know?";
-    }
+    const completion = await openai.chat.completions.create({
+      model: process.env.AI_MODEL || 'llama-3.3-70b-versatile',
+      messages,
+    });
 
-    res.json({ response });
-  } catch (err) { next(err); }
+    res.json({ response: completion.choices[0].message.content });
+  } catch (err) { 
+    console.error('AI Chat Error:', err);
+    res.status(500).json({ error: 'Failed to connect to AI service' }); 
+  }
 };

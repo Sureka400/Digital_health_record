@@ -9,6 +9,7 @@ const patientRoutes = require('./routes/patients');
 const recordRoutes = require('./routes/records');
 const consentRoutes = require('./routes/consent');
 const appointmentRoutes = require('./routes/appointments');
+const aiRoutes = require('./routes/ai');
 const { errorHandler } = require('./middlewares/errorHandler');
 
 const path = require('path');
@@ -32,6 +33,7 @@ app.use('/api/patients', patientRoutes);
 app.use('/api/records', recordRoutes);
 app.use('/api/consents', consentRoutes);
 app.use('/api/appointments', appointmentRoutes);
+app.use('/api/ai', aiRoutes);
 
 app.get('/', (req, res) => res.json({ ok: true, service: 'patient-module' }));
 
