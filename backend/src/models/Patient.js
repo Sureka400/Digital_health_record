@@ -13,6 +13,19 @@ const PatientSchema = new mongoose.Schema({
   role: { type: String, enum: roles, default: 'PATIENT' },
   preferredLanguage: { type: String, default: 'en' },
   homeState: { type: String }, // For migrant workers
+  dob: { type: Date },
+  gender: { type: String, enum: ['Male', 'Female', 'Other'] },
+  income: { type: Number },
+  isBPL: { type: Boolean, default: false },
+  isMigrant: { type: Boolean, default: false },
+  disabilities: [{ type: String }],
+  chronicConditions: [{ type: String }],
+  employmentType: { type: String },
+  appliedSchemes: [{
+    schemeId: { type: mongoose.Schema.Types.ObjectId, ref: 'Scheme' },
+    status: { type: String, enum: ['Pending', 'Approved', 'Rejected'], default: 'Pending' },
+    appliedAt: { type: Date, default: Date.now }
+  }],
   // AI-ready fields
   aiSummary: { type: String },
   embedding: { type: [Number] },

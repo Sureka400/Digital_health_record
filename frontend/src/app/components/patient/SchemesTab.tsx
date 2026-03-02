@@ -1,91 +1,167 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
-import { Gift, CheckCircle, ExternalLink, Sparkles } from 'lucide-react';
+import { Gift, CheckCircle, ExternalLink, Sparkles, Loader2, Save, Info, Send, MessageCircle } from 'lucide-react';
 import { Card } from '@/app/components/ui/card';
 import { Button } from '@/app/components/ui/button';
 import { Badge } from '@/app/components/ui/badge';
+import { Input } from '@/app/components/ui/input';
 import { useTranslation } from '@/app/utils/translations';
 import { useLanguage } from '@/app/context/LanguageContext';
+import { api } from '@/app/utils/api';
+import { toast } from 'sonner';
 
 interface Scheme {
-  id: string;
+  _id: string;
   name: string;
   description: string;
   benefits: string[];
-  eligibility: string;
+  eligibilityCriteria: any;
+  provider: string;
+}
+
+interface SchemeResult {
+  scheme: Scheme;
   eligible: boolean;
   applied: boolean;
-  aiDetected: boolean;
 }
 
 export function SchemesTab() {
   const { language } = useLanguage();
   const { t } = useTranslation(language);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [schemes, setSchemes] = useState<SchemeResult[]>([]);
+  const [aiRecommendations, setAiRecommendations] = useState<string | null>(null);
+  const [isRefreshingAi, setIsRefreshingAi] = useState(false);
+  const [patient, setPatient] = useState<any>(null);
+  const [showEligibilityForm, setShowEligibilityForm] = useState(false);
+  const [chatMessage, setChatMessage] = useState('');
+  const [chatHistory, setChatHistory] = useState<{role: 'user' | 'assistant', content: string}[]>([]);
+  const [isChatLoading, setIsChatLoading] = useState(false);
 
-  const schemes: Scheme[] = [
-    {
-      id: '1',
-      name: 'Karunya Benevolent Fund',
-      description: 'Financial assistance for treatment of serious ailments',
-      benefits: [
-        'Up to ₹5 lakh assistance',
-        'Coverage for critical illnesses',
-        'Fast-track processing',
-      ],
-      eligibility: 'BPL cardholders, Annual income < ₹3 lakh',
-      eligible: true,
-      applied: false,
-      aiDetected: true,
-    },
-    {
-      id: '2',
-      name: 'Kerala State Health Insurance',
-      description: 'Comprehensive health insurance for workers',
-      benefits: [
-        '₹5 lakh annual coverage',
-        'Cashless treatment',
-        'Pre and post hospitalization',
-      ],
-      eligibility: 'Migrant workers registered in Kerala',
-      eligible: true,
-      applied: true,
-      aiDetected: true,
-    },
-    {
-      id: '3',
-      name: 'Diabetes Management Program',
-      description: 'Free medication and monitoring for diabetes patients',
-      benefits: [
-        'Free monthly medication',
-        'Quarterly health checkups',
-        'Diet counseling',
-      ],
-      eligibility: 'Registered diabetes patients',
-      eligible: true,
-      applied: false,
-      aiDetected: true,
-    },
-    {
-      id: '4',
-      name: 'Ayushman Bharat - PMJAY',
-      description: 'National health protection scheme',
-      benefits: [
-        '₹5 lakh per family per year',
-        '1,500+ medical procedures',
-        'All public and empaneled hospitals',
-      ],
-      eligibility: 'Based on SECC data',
-      eligible: false,
-      applied: false,
-      aiDetected: false,
-    },
-  ];
+  // Form states
+  const [formData, setFormData] = useState({
+    income: '',
+    isBPL: false,
+    isMigrant: false,
+    employmentType: '',
+    chronicConditions: '',
+  });
+
+  const fetchData = async () => {
+    try {
+      setLoading(true);
+      const [schemesRes, profileRes] = await Promise.all([
+        api.get('/patients/schemes'),
+        api.get('/patients/me')
+      ]);
+      setSchemes(schemesRes.manualResults || []);
+      setAiRecommendations(schemesRes.aiRecommendations || null);
+      setPatient(profileRes.user);
+      
+      // Initialize form with patient data
+      if (profileRes.user) {
+        setFormData({
+          income: profileRes.user.income?.toString() || '',
+          isBPL: profileRes.user.isBPL || false,
+          isMigrant: profileRes.user.isMigrant || false,
+          employmentType: profileRes.user.employmentType || '',
+          chronicConditions: profileRes.user.chronicConditions?.join(', ') || '',
+        });
+      }
+    } catch (error) {
+      console.error('Failed to fetch schemes:', error);
+      toast.error('Failed to load schemes');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  const handleUpdateEligibility = async () => {
+    try {
+      setSaving(true);
+      const res = await api.put('/patients/me/eligibility', {
+        income: Number(formData.income),
+        isBPL: formData.isBPL,
+        isMigrant: formData.isMigrant,
+        employmentType: formData.employmentType,
+        chronicConditions: formData.chronicConditions.split(',').map(s => s.trim()).filter(Boolean),
+      });
+      toast.success(t('detailsUpdated'));
+      setAiRecommendations(res.aiRecommendations);
+      setShowEligibilityForm(false);
+      fetchData(); // Refresh schemes based on new data
+    } catch (error) {
+      toast.error('Failed to update details');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleApply = async (schemeId: string) => {
+    try {
+      await api.post(`/patients/schemes/${schemeId}/apply`, {});
+      toast.success(t('applySuccess'));
+      fetchData(); // Refresh to show as applied
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to apply');
+    }
+  };
+
+  const handleRefreshAi = async () => {
+    try {
+      setIsRefreshingAi(true);
+      const res = await api.get('/ai/schemes');
+      setAiRecommendations(res.recommendations);
+      toast.success('AI recommendations updated');
+    } catch (error) {
+      toast.error('Failed to refresh AI recommendations');
+    } finally {
+      setIsRefreshingAi(false);
+    }
+  };
+
+  const handleSendChatMessage = async () => {
+    if (!chatMessage.trim() || isChatLoading) return;
+
+    const userMsg = chatMessage.trim();
+    setChatMessage('');
+    setChatHistory(prev => [...prev, { role: 'user', content: userMsg }]);
+    setIsChatLoading(true);
+
+    try {
+      const res = await api.post('/ai/schemes/chat', {
+        message: userMsg,
+        history: chatHistory
+      });
+      setChatHistory(prev => [...prev, { role: 'assistant', content: res.answer }]);
+    } catch (error) {
+      toast.error('Failed to get AI response');
+    } finally {
+      setIsChatLoading(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex flex-col items-center justify-center py-12 space-y-4">
+        <Loader2 className="w-8 h-8 text-primary animate-spin" />
+        <p className="text-muted-foreground">{t('loadingRecords')}</p>
+      </div>
+    );
+  }
 
   const eligibleSchemes = schemes.filter(s => s.eligible);
   const appliedSchemes = schemes.filter(s => s.applied);
+  const availableSchemes = schemes.filter(s => s.eligible && !s.applied);
+  const otherSchemes = schemes.filter(s => !s.eligible && !s.applied);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pb-20">
       {/* Header with Stats */}
       <Card className="bg-gradient-to-r from-[#0b6e4f] to-[#2196F3] text-white">
         <div className="flex items-center justify-between">
@@ -100,6 +176,94 @@ export function SchemesTab() {
         </div>
       </Card>
 
+      {/* Check Eligibility Section */}
+      {!showEligibilityForm ? (
+        <Card className="bg-accent/50 border-accent">
+          <div className="flex items-start justify-between gap-4">
+            <div className="flex gap-3">
+              <div className="p-2 bg-primary/10 rounded-lg text-primary">
+                <Info className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-foreground mb-1">
+                  {t('checkEligibilityTitle')}
+                </h3>
+                <p className="text-sm text-muted-foreground">
+                  {t('checkEligibilityDesc')}
+                </p>
+              </div>
+            </div>
+            <Button variant="outline" size="sm" onClick={() => setShowEligibilityForm(true)}>
+              {t('updateEligibility')}
+            </Button>
+          </div>
+        </Card>
+      ) : (
+        <Card className="border-primary/20 bg-primary/5">
+          <h3 className="font-semibold text-foreground mb-4 flex items-center gap-2">
+            <Save className="w-5 h-5 text-primary" />
+            {t('updateEligibility')}
+          </h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+            <Input
+              label={t('annualIncome')}
+              type="number"
+              value={formData.income}
+              onChange={(e) => setFormData({ ...formData, income: e.target.value })}
+              placeholder="e.g. 150000"
+            />
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-foreground">{t('employmentType')}</label>
+              <select
+                className="w-full px-4 py-3 bg-input-background border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                value={formData.employmentType}
+                onChange={(e) => setFormData({ ...formData, employmentType: e.target.value })}
+              >
+                <option value="">Select...</option>
+                <option value="Migrant Worker">{t('migrantWorker')}</option>
+                <option value="Regular Worker">{t('regularWorker')}</option>
+                <option value="Unemployed">{t('unemployed')}</option>
+                <option value="Other">{t('other')}</option>
+              </select>
+            </div>
+          </div>
+          <div className="flex flex-wrap gap-6 mb-4">
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={formData.isBPL}
+                onChange={(e) => setFormData({ ...formData, isBPL: e.target.checked })}
+                className="w-4 h-4 rounded border-input text-primary focus:ring-primary"
+              />
+              <span className="text-sm font-medium">{t('isBPL')}</span>
+            </label>
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={formData.isMigrant}
+                onChange={(e) => setFormData({ ...formData, isMigrant: e.target.checked })}
+                className="w-4 h-4 rounded border-input text-primary focus:ring-primary"
+              />
+              <span className="text-sm font-medium">{t('isMigrant')}</span>
+            </label>
+          </div>
+          <Input
+            label={t('chronicConditions')}
+            value={formData.chronicConditions}
+            onChange={(e) => setFormData({ ...formData, chronicConditions: e.target.value })}
+            placeholder="e.g. Diabetes, Hypertension (comma separated)"
+          />
+          <div className="flex gap-3 mt-6">
+            <Button variant="primary" onClick={handleUpdateEligibility} disabled={saving}>
+              {saving ? t('saving') : t('updateEligibility')}
+            </Button>
+            <Button variant="ghost" onClick={() => setShowEligibilityForm(false)}>
+              {t('cancel')}
+            </Button>
+          </div>
+        </Card>
+      )}
+
       {/* AI Detection Banner */}
       <Card className="bg-gradient-to-r from-purple-50 to-blue-50 border-purple-200">
         <div className="flex items-start gap-3">
@@ -110,13 +274,82 @@ export function SchemesTab() {
           >
             <Sparkles className="w-6 h-6 text-white" />
           </motion.div>
-          <div>
-            <h3 className="font-semibold text-foreground mb-1 flex items-center gap-2">
-              {t('aiEligibilityDetection')}
-            </h3>
-            <p className="text-sm text-muted-foreground">
+          <div className="flex-1">
+            <div className="flex items-center justify-between mb-1">
+              <h3 className="font-semibold text-foreground flex items-center gap-2">
+                {t('aiEligibilityDetection')}
+              </h3>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={handleRefreshAi} 
+                disabled={isRefreshingAi}
+                className="text-purple-600 hover:text-purple-700 hover:bg-purple-100"
+              >
+                {isRefreshingAi ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Sparkles className="w-4 h-4 mr-2" />}
+                {isRefreshingAi ? 'Analyzing...' : 'Refresh AI'}
+              </Button>
+            </div>
+            <p className="text-sm text-muted-foreground mb-4">
               {t('aiEligibilityDesc')}
             </p>
+
+            {aiRecommendations && (
+              <div className="mt-4 p-4 bg-white/50 rounded-lg border border-purple-100">
+                <div className="prose prose-sm max-w-none text-muted-foreground whitespace-pre-line mb-4">
+                  {aiRecommendations}
+                </div>
+                
+                {/* AI Chat about Schemes */}
+                <div className="space-y-3 mt-6 border-t border-purple-100 pt-4">
+                  <h4 className="text-sm font-semibold text-purple-700 flex items-center gap-2">
+                    <MessageCircle className="w-4 h-4" />
+                    Ask AI about these schemes
+                  </h4>
+                  
+                  <div className="max-h-60 overflow-y-auto space-y-2 mb-3 pr-2">
+                    {chatHistory.map((msg, i) => (
+                      <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                        <div className={`max-w-[85%] rounded-lg px-3 py-2 text-sm ${
+                          msg.role === 'user' 
+                            ? 'bg-purple-600 text-white' 
+                            : 'bg-white border border-purple-100 text-muted-foreground'
+                        }`}>
+                          {msg.content}
+                        </div>
+                      </div>
+                    ))}
+                    {isChatLoading && (
+                      <div className="flex justify-start">
+                        <div className="bg-white border border-purple-100 rounded-lg px-3 py-2">
+                          <Loader2 className="w-4 h-4 animate-spin text-purple-600" />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      placeholder="Ask a question about your eligibility..."
+                      value={chatMessage}
+                      onChange={(e) => setChatMessage(e.target.value)}
+                      onKeyDown={(e) => e.key === 'Enter' && handleSendChatMessage()}
+                      className="flex-1 px-3 py-2 text-sm bg-white border border-purple-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                    />
+                    <Button
+                      variant="primary"
+                      size="sm"
+                      onClick={handleSendChatMessage}
+                      disabled={isChatLoading || !chatMessage.trim()}
+                      className="bg-purple-600 hover:bg-purple-700 h-9 w-9 p-0 flex items-center justify-center"
+                    >
+                      <Send className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </Card>
@@ -129,9 +362,9 @@ export function SchemesTab() {
             {t('activeSchemes')}
           </h3>
           <div className="space-y-3">
-            {appliedSchemes.map((scheme, index) => (
+            {appliedSchemes.map((result, index) => (
               <motion.div
-                key={scheme.id}
+                key={result.scheme._id}
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: index * 0.1 }}
@@ -140,17 +373,14 @@ export function SchemesTab() {
                   <div className="flex items-start justify-between mb-3">
                     <div className="flex items-center gap-2">
                       <Gift className="w-5 h-5 text-green-600" />
-                      <h4 className="font-semibold text-foreground">{scheme.name}</h4>
+                      <h4 className="font-semibold text-foreground">{result.scheme.name}</h4>
                     </div>
                     <Badge variant="success">
                       <CheckCircle className="w-3 h-3" />
-                      Active
+                      Active / Applied
                     </Badge>
                   </div>
-                  <p className="text-sm text-muted-foreground mb-3">{scheme.description}</p>
-                  <Button variant="outline" size="sm" icon={<ExternalLink className="w-4 h-4" />}>
-                    {t('viewDetails')}
-                  </Button>
+                  <p className="text-sm text-muted-foreground mb-3">{result.scheme.description}</p>
                 </Card>
               </motion.div>
             ))}
@@ -158,18 +388,17 @@ export function SchemesTab() {
         </div>
       )}
 
-      {/* Eligible Schemes */}
-      <div>
-        <h3 className="font-semibold text-foreground mb-3 flex items-center gap-2">
-          <Gift className="w-5 h-5 text-[#0b6e4f]" />
-          {t('availableSchemes')}
-        </h3>
-        <div className="space-y-3">
-          {schemes
-            .filter(s => s.eligible && !s.applied)
-            .map((scheme, index) => (
+      {/* Eligible & Not Applied Schemes */}
+      {availableSchemes.length > 0 && (
+        <div>
+          <h3 className="font-semibold text-foreground mb-3 flex items-center gap-2">
+            <Gift className="w-5 h-5 text-[#0b6e4f]" />
+            {t('availableSchemes')}
+          </h3>
+          <div className="space-y-3">
+            {availableSchemes.map((result, index) => (
               <motion.div
-                key={scheme.id}
+                key={result.scheme._id}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.1 }}
@@ -178,15 +407,13 @@ export function SchemesTab() {
                   <div className="flex items-start justify-between mb-3">
                     <div>
                       <div className="flex items-center gap-2 mb-2">
-                        <h4 className="font-semibold text-foreground">{scheme.name}</h4>
-                        {scheme.aiDetected && (
-                          <Badge variant="ai">
-                            <Sparkles className="w-3 h-3" />
-                            AI Detected
-                          </Badge>
-                        )}
+                        <h4 className="font-semibold text-foreground">{result.scheme.name}</h4>
+                        <Badge variant="ai">
+                          <Sparkles className="w-3 h-3" />
+                          AI Detected
+                        </Badge>
                       </div>
-                      <p className="text-sm text-muted-foreground mb-3">{scheme.description}</p>
+                      <p className="text-sm text-muted-foreground mb-3">{result.scheme.description}</p>
                     </div>
                   </div>
 
@@ -194,7 +421,7 @@ export function SchemesTab() {
                   <div className="mb-4">
                     <p className="text-xs font-medium text-muted-foreground mb-2">{t('keyBenefits')}:</p>
                     <ul className="space-y-1">
-                      {scheme.benefits.map((benefit, i) => (
+                      {result.scheme.benefits.map((benefit, i) => (
                         <li key={i} className="text-sm text-foreground flex items-start gap-2">
                           <CheckCircle className="w-4 h-4 text-green-600 flex-shrink-0 mt-0.5" />
                           {benefit}
@@ -203,50 +430,47 @@ export function SchemesTab() {
                     </ul>
                   </div>
 
-                  {/* Eligibility */}
-                  <div className="p-3 bg-accent rounded-lg mb-4">
-                    <p className="text-xs font-medium text-muted-foreground mb-1">{t('eligibility')}:</p>
-                    <p className="text-sm text-foreground">{scheme.eligibility}</p>
-                  </div>
-
                   {/* Apply Button */}
-                  <Button variant="primary" fullWidth icon={<ExternalLink className="w-4 h-4" />}>
+                  <Button 
+                    variant="primary" 
+                    fullWidth 
+                    icon={<ExternalLink className="w-4 h-4" />}
+                    onClick={() => handleApply(result.scheme._id)}
+                  >
                     {t('applyNow')}
                   </Button>
                 </Card>
               </motion.div>
             ))}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Other Schemes */}
-      <div>
-        <h3 className="font-semibold text-foreground mb-3">{t('otherSchemes')}</h3>
-        <div className="space-y-3">
-          {schemes
-            .filter(s => !s.eligible)
-            .map((scheme, index) => (
+      {otherSchemes.length > 0 && (
+        <div>
+          <h3 className="font-semibold text-foreground mb-3">{t('otherSchemes')}</h3>
+          <div className="space-y-3">
+            {otherSchemes.map((result, index) => (
               <motion.div
-                key={scheme.id}
+                key={result.scheme._id}
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ delay: index * 0.1 }}
               >
-                <Card className="opacity-60">
+                <Card className="opacity-60 bg-muted/30">
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
-                      <h4 className="font-semibold text-foreground mb-1">{scheme.name}</h4>
-                      <p className="text-sm text-muted-foreground mb-2">{scheme.description}</p>
-                      <div className="p-2 bg-muted rounded text-xs text-muted-foreground">
-                        Not eligible: {scheme.eligibility}
-                      </div>
+                      <h4 className="font-semibold text-foreground mb-1">{result.scheme.name}</h4>
+                      <p className="text-sm text-muted-foreground">{result.scheme.description}</p>
                     </div>
                   </div>
                 </Card>
               </motion.div>
             ))}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Help Card */}
       <Card className="bg-blue-50 border-blue-200">

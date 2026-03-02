@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { authenticate } = require('../middlewares/auth');
 const ctrl = require('../controllers/patientController');
+const schemeCtrl = require('../controllers/schemeController');
 
 // ✅ Patient profile
 router.get('/me', authenticate, ctrl.getMe);
@@ -11,6 +12,11 @@ router.get('/dashboard', authenticate, ctrl.getDashboard);
 
 // ✅ Update patient profile
 router.put('/me', authenticate, ctrl.updateProfile);
+
+// ✅ Schemes
+router.get('/schemes', authenticate, schemeCtrl.checkEligibility);
+router.post('/schemes/:schemeId/apply', authenticate, schemeCtrl.applyToScheme);
+router.put('/me/eligibility', authenticate, schemeCtrl.updateEligibilityProfile);
 
 // ✅ Enable emergency mode
 router.post('/me/emergency', authenticate, ctrl.enableEmergency);

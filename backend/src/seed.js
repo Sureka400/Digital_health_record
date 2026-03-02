@@ -2,6 +2,7 @@ require('dotenv').config();
 const mongoose = require('mongoose');
 const Patient = require('./models/Patient');
 const HealthRecord = require('./models/HealthRecord');
+const Scheme = require('./models/Scheme');
 const { connectDB } = require('./config/db');
 
 async function seed() {
@@ -10,6 +11,7 @@ async function seed() {
   // Clear existing data
   await Patient.deleteMany({});
   await HealthRecord.deleteMany({});
+  await Scheme.deleteMany({});
   
   console.log('Cleared existing data');
 
@@ -23,6 +25,49 @@ async function seed() {
   });
   await patient.save();
   console.log('Created demo patient');
+
+  // Create demo schemes
+  const schemes = [
+    {
+      name: 'Karunya Benevolent Fund',
+      description: 'Financial assistance for treatment of serious ailments',
+      benefits: ['Up to ₹5 lakh assistance', 'Coverage for critical illnesses', 'Fast-track processing'],
+      eligibilityCriteria: {
+        isBPLRequired: true,
+        incomeLimit: 300000
+      }
+    },
+    {
+      name: 'Kerala State Health Insurance',
+      description: 'Comprehensive health insurance for workers',
+      benefits: ['₹5 lakh annual coverage', 'Cashless treatment', 'Pre and post hospitalization'],
+      eligibilityCriteria: {
+        employmentType: 'Migrant Worker'
+      }
+    },
+    {
+      name: 'Diabetes Management Program',
+      description: 'Free medication and monitoring for diabetes patients',
+      benefits: ['Free monthly medication', 'Quarterly health checkups', 'Diet counseling'],
+      eligibilityCriteria: {
+        requiredConditions: ['Diabetes']
+      }
+    },
+    {
+      name: 'Ayushman Bharat - PMJAY',
+      description: 'National health protection scheme',
+      benefits: ['₹5 lakh per family per year', '1,500+ medical procedures', 'All public and empaneled hospitals'],
+      eligibilityCriteria: {
+        isBPLRequired: true
+      }
+    }
+  ];
+
+  for (const s of schemes) {
+    const scheme = new Scheme(s);
+    await scheme.save();
+  }
+  console.log('Created demo schemes');
 
   // Create demo doctor
   const doctor = new Patient({
