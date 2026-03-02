@@ -25,6 +25,20 @@ exports.createAppointment = async (req, res, next) => {
   } catch (err) { next(err); }
 };
 
+exports.updateAppointment = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const updateFields = req.body;
+    const appointment = await Appointment.findOneAndUpdate(
+      { _id: id, patient: req.user.id },
+      updateFields,
+      { new: true }
+    );
+    if (!appointment) return res.status(404).json({ error: 'Appointment not found' });
+    res.json({ appointment });
+  } catch (err) { next(err); }
+};
+
 exports.updateAppointmentStatus = async (req, res, next) => {
   try {
     const { id } = req.params;

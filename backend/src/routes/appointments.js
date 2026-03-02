@@ -9,6 +9,9 @@ router.get('/', authenticate, ctrl.getAppointments);
 // Create a new appointment
 router.post('/', authenticate, ctrl.createAppointment);
 
+// Update appointment (general purpose)
+router.put('/:id', authenticate, ctrl.updateAppointment);
+
 // Update appointment status (complete, cancelled)
 router.patch('/:id', authenticate, ctrl.updateAppointmentStatus);
 

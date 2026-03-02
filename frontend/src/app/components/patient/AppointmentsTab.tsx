@@ -43,7 +43,11 @@ export function AppointmentsTab() {
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [loading, setLoading] = useState(true);
   const [showBookDialog, setShowBookDialog] = useState(false);
+  const [showDetailsDialog, setShowDetailsDialog] = useState(false);
+  const [showRescheduleDialog, setShowRescheduleDialog] = useState(false);
+  const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
   const [bookingLoading, setBookingLoading] = useState(false);
+  const [rescheduleData, setRescheduleData] = useState({ date: '', time: '' });
 
   // Form State
   const [formData, setFormData] = useState({
@@ -102,6 +106,37 @@ export function AppointmentsTab() {
     } catch (error) {
       console.error('Failed to cancel appointment:', error);
     }
+  };
+
+  const handleReschedule = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedAppointment) return;
+    try {
+      setBookingLoading(true);
+      const response = await api.put(`/appointments/${selectedAppointment._id}`, rescheduleData);
+      setAppointments(appointments.map(a => a._id === selectedAppointment._id ? response.appointment : a));
+      setShowRescheduleDialog(false);
+      setSelectedAppointment(null);
+    } catch (error) {
+      console.error('Failed to reschedule appointment:', error);
+      alert('Failed to reschedule. Please try again.');
+    } finally {
+      setBookingLoading(false);
+    }
+  };
+
+  const handleOpenReschedule = (appointment: Appointment) => {
+    setSelectedAppointment(appointment);
+    setRescheduleData({
+      date: appointment.date.split('T')[0],
+      time: appointment.time
+    });
+    setShowRescheduleDialog(true);
+  };
+
+  const handleOpenDetails = (appointment: Appointment) => {
+    setSelectedAppointment(appointment);
+    setShowDetailsDialog(true);
   };
 
   const upcomingAppointments = appointments.filter(a => a.status === 'upcoming');
@@ -192,10 +227,18 @@ export function AppointmentsTab() {
 
                       {/* Actions */}
                       <div className="flex gap-2">
-                        <Button variant="primary" size="sm">
+                        <Button 
+                          variant="primary" 
+                          size="sm"
+                          onClick={() => appointment.type === 'video' ? console.log('Join video call') : handleOpenDetails(appointment)}
+                        >
                           {appointment.type === 'video' ? t('joinVideoCall') : t('viewDetails')}
                         </Button>
-                        <Button variant="outline" size="sm">
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => handleOpenReschedule(appointment)}
+                        >
                           {t('reschedule')}
                         </Button>
                         <Button variant="ghost" size="sm" onClick={() => handleCancelAppointment(appointment._id)}>
@@ -258,7 +301,11 @@ export function AppointmentsTab() {
                         {appointment.time}
                       </div>
 
-                      <Button variant="outline" size="sm">
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => handleOpenDetails(appointment)}
+                      >
                         {t('viewSummary')}
                       </Button>
                     </div>
@@ -357,6 +404,126 @@ export function AppointmentsTab() {
               </Button>
               <Button type="submit" variant="primary" disabled={bookingLoading}>
                 {bookingLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : t('confirmBooking')}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* View Details Dialog */}
+      <Dialog open={showDetailsDialog} onOpenChange={setShowDetailsDialog}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>{t('appointmentDetails')}</DialogTitle>
+            <DialogDescription>
+              {t('appointmentDetailsDesc')}
+            </DialogDescription>
+          </DialogHeader>
+          {selectedAppointment && (
+            <div className="space-y-4 py-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary">
+                  <User className="w-5 h-5" />
+                </div>
+                <div>
+                  <h4 className="font-semibold">{selectedAppointment.doctor}</h4>
+                  <p className="text-sm text-muted-foreground">{selectedAppointment.specialty}</p>
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <p className="text-xs text-muted-foreground uppercase">{t('date')}</p>
+                  <div className="flex items-center gap-2 text-sm">
+                    <Calendar className="w-4 h-4 text-primary" />
+                    {new Date(selectedAppointment.date).toLocaleDateString()}
+                  </div>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-xs text-muted-foreground uppercase">{t('time')}</p>
+                  <div className="flex items-center gap-2 text-sm">
+                    <Clock className="w-4 h-4 text-primary" />
+                    {selectedAppointment.time}
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-1">
+                <p className="text-xs text-muted-foreground uppercase">{t('hospital')}</p>
+                <div className="flex items-center gap-2 text-sm">
+                  <MapPin className="w-4 h-4 text-primary" />
+                  {selectedAppointment.hospital}
+                </div>
+              </div>
+
+              <div className="space-y-1">
+                <p className="text-xs text-muted-foreground uppercase">{t('appointmentType')}</p>
+                <Badge variant={selectedAppointment.type === 'video' ? 'info' : 'secondary'}>
+                  {selectedAppointment.type === 'video' ? t('videoConsultation') : t('inPerson')}
+                </Badge>
+              </div>
+
+              {selectedAppointment.summary && (
+                <div className="space-y-1">
+                  <p className="text-xs text-muted-foreground uppercase">{t('summary')}</p>
+                  <p className="text-sm border rounded-lg p-2 bg-muted/50">{selectedAppointment.summary}</p>
+                </div>
+              )}
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowDetailsDialog(false)}>
+              {t('close')}
+            </Button>
+            {selectedAppointment?.status === 'upcoming' && (
+              <Button variant="primary" onClick={() => { setShowDetailsDialog(false); handleOpenReschedule(selectedAppointment); }}>
+                {t('reschedule')}
+              </Button>
+            )}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Reschedule Dialog */}
+      <Dialog open={showRescheduleDialog} onOpenChange={setShowRescheduleDialog}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>{t('rescheduleAppointment')}</DialogTitle>
+            <DialogDescription>
+              {t('rescheduleDesc')}
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleReschedule}>
+            <div className="grid gap-4 py-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="grid gap-2">
+                  <Label htmlFor="reschedule-date">{t('newDate')}</Label>
+                  <Input
+                    id="reschedule-date"
+                    type="date"
+                    value={rescheduleData.date}
+                    onChange={(e) => setRescheduleData({ ...rescheduleData, date: e.target.value })}
+                    required
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="reschedule-time">{t('newTime')}</Label>
+                  <Input
+                    id="reschedule-time"
+                    type="time"
+                    value={rescheduleData.time}
+                    onChange={(e) => setRescheduleData({ ...rescheduleData, time: e.target.value })}
+                    required
+                  />
+                </div>
+              </div>
+            </div>
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => setShowRescheduleDialog(false)}>
+                {t('cancel')}
+              </Button>
+              <Button type="submit" variant="primary" disabled={bookingLoading}>
+                {bookingLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : t('confirmReschedule')}
               </Button>
             </DialogFooter>
           </form>
