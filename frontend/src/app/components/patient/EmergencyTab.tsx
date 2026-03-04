@@ -27,6 +27,7 @@ export function EmergencyTab() {
   const { t } = useTranslation(language);
   const [loading, setLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
+  const [showAnyway, setShowAnyway] = useState(false);
   const [profile, setProfile] = useState<any>(null);
   const [editedProfile, setEditedProfile] = useState<any>(null);
 
@@ -132,6 +133,26 @@ export function EmergencyTab() {
     }
   ];
 
+  const toggleEmergencyEnabled = async () => {
+    try {
+      await api.post('/patients/me/emergency', {});
+      const updatedProfile = {
+        ...profile,
+        emergency: {
+          ...(profile?.emergency || {}),
+          enabled: true
+        }
+      };
+      setProfile(updatedProfile);
+      setEditedProfile(updatedProfile);
+      setIsEditing(true);
+      alert('Emergency Medical Card has been enabled. Please fill in your critical health details.');
+    } catch (err: any) {
+      console.error('Failed to enable emergency access:', err);
+      alert(err.message || 'Failed to enable emergency access');
+    }
+  };
+
   if (loading) return <div className="p-8 text-center">Loading emergency data...</div>;
 
   return (
@@ -141,12 +162,12 @@ export function EmergencyTab() {
         whileTap={{ scale: 0.95 }}
         className="relative"
       >
-        <button 
-          onClick={handleSOS}
-          className="w-full aspect-square max-w-[200px] mx-auto block rounded-full bg-red-600 text-white font-bold text-3xl shadow-[0_0_50px_rgba(220,38,38,0.5)] border-[10px] border-red-100 animate-pulse relative z-10"
+        <a 
+          href="tel:108"
+          className="w-full aspect-square max-w-[200px] mx-auto flex items-center justify-center rounded-full bg-red-600 text-white font-bold text-3xl shadow-[0_0_50px_rgba(220,38,38,0.5)] border-[10px] border-red-100 animate-pulse relative z-10"
         >
-          SOS
-        </button>
+          108
+        </a>
         <div className="absolute inset-0 bg-red-600 rounded-full blur-3xl opacity-20 animate-pulse" />
         <p className="text-center mt-4 text-red-600 font-bold animate-bounce uppercase tracking-widest">
           {t('tapToCallEmergency')}
@@ -177,23 +198,65 @@ export function EmergencyTab() {
       </div>
 
       {/* Emergency Profile Summary */}
-      <Card className="bg-red-950/20 border-red-900/50 relative overflow-hidden">
+      <Card className={`bg-red-950/20 border-red-900/50 relative overflow-hidden ${(!profile?.emergency?.enabled && !showAnyway) ? 'opacity-70 grayscale-[0.5]' : ''}`}>
+        {!profile?.emergency?.enabled && !showAnyway && (
+          <div className="absolute inset-0 z-20 bg-red-950/40 backdrop-blur-[1px] flex items-center justify-center p-6 text-center">
+            <div className="space-y-4">
+              <div className="w-16 h-16 bg-red-600/20 rounded-full flex items-center justify-center mx-auto border border-red-600/40 animate-pulse">
+                <ShieldAlert className="w-8 h-8 text-red-500" />
+              </div>
+              <div>
+                <h3 className="text-lg font-bold text-red-100">{t('emergencyMedicalCardDisabled')}</h3>
+                <p className="text-xs text-red-300 mt-1 max-w-[250px]">
+                  {t('Enable your medical card to allow doctors to access your critical health data in emergencies.')}
+                </p>
+              </div>
+              <div className="flex flex-col gap-2 w-full max-w-[200px] mx-auto">
+                <Button 
+                  onClick={toggleEmergencyEnabled}
+                  className="bg-red-600 hover:bg-red-700 text-white font-bold"
+                >
+                  {t('Enable Now')}
+                </Button>
+                <Button 
+                  onClick={() => setShowAnyway(true)}
+                  variant="outline"
+                  className="border-red-600/50 text-red-100 hover:bg-red-900/30"
+                >
+                  {t('view')}
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
         <div className="flex justify-between items-center mb-4">
           <h3 className="font-bold text-red-400 flex items-center gap-2">
             <User className="w-5 h-5" />
             {t('emergencyMedicalCard')}
+            {profile?.emergency?.enabled && <Badge className="bg-green-600 text-[10px] h-4">ENABLED</Badge>}
           </h3>
-          <Button 
-            size="sm" 
-            variant="ghost" 
-            className="h-8 w-8 p-0 rounded-full text-red-400 hover:bg-red-900/30"
-            onClick={() => {
-              if (isEditing) handleSave();
-              else setIsEditing(true);
-            }}
-          >
-            {isEditing ? <Save className="w-4 h-4" /> : <Edit2 className="w-4 h-4" />}
-          </Button>
+          <div className="flex gap-2">
+            {!isEditing && (profile?.emergency?.enabled || showAnyway) && (
+              <Button
+                size="lg"
+                variant="outline"
+                className="border-red-600 text-red-400 bg-red-900/20 font-bold px-6 py-2"
+                onClick={() => setIsEditing(true)}
+              >
+                Re-update
+              </Button>
+            )}
+            {isEditing && (
+              <Button
+                size="lg"
+                variant="solid"
+                className="bg-red-600 text-white font-bold px-6 py-2 shadow-lg border-red-700 hover:bg-red-700"
+                onClick={handleSave}
+              >
+                <Save className="w-5 h-5 mr-2" /> Save
+              </Button>
+            )}
+          </div>
         </div>
 
         <div className="grid grid-cols-2 gap-4">

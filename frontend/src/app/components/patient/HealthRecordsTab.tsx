@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
-import { FileText, Download, Eye, Share2, Calendar, Lock, Unlock, Loader2, Upload, Plus, QrCode } from 'lucide-react';
+import { FileText, Download, Eye, Share2, Calendar, Lock, Unlock, Loader2, Upload, Plus, QrCode, Phone } from 'lucide-react';
 import { Card } from '@/app/components/ui/card';
 import { Button } from '@/app/components/ui/button';
 import { Badge } from '@/app/components/ui/badge';
@@ -27,6 +27,7 @@ interface MedicalRecord {
   createdAt: string;
   hospital: string;
   doctor: string;
+  emergencyContactNumber?: string;
   consentEnabled?: boolean;
   qrToken?: string;
   description?: string;
@@ -41,12 +42,23 @@ export function HealthRecordsTab({ onNavigate }: HealthRecordsTabProps) {
   const { language } = useLanguage();
   const { t } = useTranslation(language);
   const [records, setRecords] = useState<MedicalRecord[]>([]);
+  const [profile, setProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     fetchRecords();
+    fetchProfile();
   }, []);
+
+  const fetchProfile = async () => {
+    try {
+      const data = await api.get('/patients/me');
+      setProfile(data.user);
+    } catch (err) {
+      console.error('Failed to fetch profile:', err);
+    }
+  };
 
   const fetchRecords = async () => {
     setLoading(true);
@@ -76,6 +88,7 @@ export function HealthRecordsTab({ onNavigate }: HealthRecordsTabProps) {
         description: formData.description,
         hospital: formData.hospital,
         doctor: formData.doctor,
+        emergencyContactNumber: formData.emergencyContactNumber,
       });
       
       const newRecord = response.record;
@@ -331,6 +344,7 @@ export function HealthRecordsTab({ onNavigate }: HealthRecordsTabProps) {
         onOpenChange={setShowUploadDialog}
         onUpload={handleUpload}
         uploading={uploading}
+        profile={profile}
         t={t}
       />
 
@@ -350,13 +364,20 @@ export function HealthRecordsTab({ onNavigate }: HealthRecordsTabProps) {
   );
 }
 
-function UploadRecordDialog({ open, onOpenChange, onUpload, uploading, t }: any) {
+function UploadRecordDialog({ open, onOpenChange, onUpload, uploading, t, profile }: any) {
   const [file, setFile] = useState<File | null>(null);
   const [title, setTitle] = useState('');
   const [category, setCategory] = useState('prescription');
   const [hospital, setHospital] = useState('');
   const [doctor, setDoctor] = useState('');
+  const [emergencyContactNumber, setEmergencyContactNumber] = useState('');
   const [description, setDescription] = useState('');
+
+  useEffect(() => {
+    if (open && profile?.emergencyContact?.phone && !emergencyContactNumber) {
+      setEmergencyContactNumber(profile.emergencyContact.phone);
+    }
+  }, [open, profile]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -369,7 +390,7 @@ function UploadRecordDialog({ open, onOpenChange, onUpload, uploading, t }: any)
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!file) return;
-    onUpload({ file, title, category, hospital, doctor, description });
+    onUpload({ file, title, category, hospital, doctor, emergencyContactNumber, description });
     onOpenChange(false);
     // Reset form
     setFile(null);
@@ -377,6 +398,7 @@ function UploadRecordDialog({ open, onOpenChange, onUpload, uploading, t }: any)
     setCategory('prescription');
     setHospital('');
     setDoctor('');
+    setEmergencyContactNumber('');
     setDescription('');
   };
 
@@ -451,6 +473,23 @@ function UploadRecordDialog({ open, onOpenChange, onUpload, uploading, t }: any)
               placeholder="Doctor name"
               className="bg-zinc-900 border-zinc-800"
             />
+          </div>
+          <div className="space-y-2 p-3 bg-red-900/10 border border-red-900/20 rounded-lg">
+            <Label htmlFor="emergencyContactNumber" className="text-red-400 font-bold flex items-center gap-2">
+              <Phone className="w-4 h-4" />
+              {t('Emergency Contact Number')} (Relative)
+            </Label>
+            <Input
+              id="emergencyContactNumber"
+              value={emergencyContactNumber}
+              onChange={(e) => setEmergencyContactNumber(e.target.value)}
+              placeholder="Relative's Phone Number"
+              className="bg-zinc-900 border-red-900/30 text-white"
+              required
+            />
+            <p className="text-[10px] text-red-300/60">
+              * This number will be used by doctors to contact your relatives in case of emergency.
+            </p>
           </div>
           <div className="space-y-2">
             <Label htmlFor="description">{t('Description')}</Label>
@@ -598,6 +637,24 @@ function RecordDetailsDialog({ record, open, onOpenChange, onDownload, onShare, 
                   <p className="text-sm">{record.doctor || 'Not specified'}</p>
                 </div>
               </div>
+
+              {record.emergencyContactNumber && (
+                <div className="space-y-1 mb-4 p-3 bg-red-900/10 border border-red-900/20 rounded-lg">
+                  <p className="text-xs text-red-500 uppercase font-semibold">{t('Emergency Contact')}</p>
+                  <div className="flex items-center justify-between">
+                    <p className="text-sm font-bold text-red-400">{record.emergencyContactNumber}</p>
+                    <Button 
+                      size="sm" 
+                      variant="outline" 
+                      className="h-8 border-red-900/30 text-red-400 hover:bg-red-900/20"
+                      onClick={() => window.location.href = `tel:${record.emergencyContactNumber}`}
+                    >
+                      <Phone className="w-3 h-3 mr-2" />
+                      {t('Call')}
+                    </Button>
+                  </div>
+                </div>
+              )}
 
               <div className="space-y-2">
                 <p className="text-xs text-zinc-500 uppercase font-semibold">{t('Description')}</p>

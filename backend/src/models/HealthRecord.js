@@ -7,6 +7,7 @@ const HealthRecordSchema = new mongoose.Schema({
   category: { type: String },
   hospital: { type: String },
   doctor: { type: String },
+  emergencyContactNumber: { type: String },
   metadata: { type: Object, default: {} },
   fileUrl: { type: String },
   createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'Patient' },

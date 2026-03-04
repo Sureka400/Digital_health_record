@@ -165,6 +165,7 @@ exports.createRecord = async (req, res, next) => {
       category: req.body.category || '',
       hospital: req.body.hospital || '',
       doctor: req.body.doctor || '',
+      emergencyContactNumber: req.body.emergencyContactNumber || '',
       metadata: req.body.metadata || {}, 
       fileUrl: req.file ? req.file.filename : (req.body.fileUrl || null),
       createdBy: userId, 

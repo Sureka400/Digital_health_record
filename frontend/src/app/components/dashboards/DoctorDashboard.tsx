@@ -18,6 +18,7 @@ export function DoctorDashboard({ user, onLogout }: DoctorDashboardProps) {
   const { language, setLanguage } = useLanguage();
   const { t } = useTranslation(language);
   const [activeTab, setActiveTab] = useState('scan');
+  const [selectedPatient, setSelectedPatient] = useState<any>(null);
 
   const tabs = [
     { id: 'scan', name: t('scanPatientQR'), icon: QrCode, color: '#0b6e4f' },
@@ -113,10 +114,20 @@ export function DoctorDashboard({ user, onLogout }: DoctorDashboardProps) {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3 }}
         >
-          {activeTab === 'scan' && <ScanQRTab onNavigate={setActiveTab} />}
-          {activeTab === 'history' && <PatientHistoryTab />}
-          {activeTab === 'upload' && <UploadRecordsTab />}
-          {activeTab === 'ai' && <AIClinicalTab />}
+          {activeTab === 'scan' && (
+            <ScanQRTab 
+              onNavigate={setActiveTab} 
+              onPatientSelected={setSelectedPatient}
+              selectedPatient={selectedPatient}
+            />
+          )}
+          {activeTab === 'history' && (
+            <PatientHistoryTab patient={selectedPatient} />
+          )}
+          {activeTab === 'upload' && (
+            <UploadRecordsTab patient={selectedPatient} />
+          )}
+          {activeTab === 'ai' && <AIClinicalTab patient={selectedPatient} />}
           {activeTab === 'appointments' && <MyAppointmentsTab />}
         </motion.div>
       </div>

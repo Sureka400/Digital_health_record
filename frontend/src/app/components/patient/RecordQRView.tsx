@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
-import { FileText, Download, Calendar, Hospital, User, Clock, AlertCircle, Loader2 } from 'lucide-react';
+import { FileText, Download, Calendar, Hospital, User, Clock, AlertCircle, Loader2, Phone } from 'lucide-react';
 import { Card } from '@/app/components/ui/card';
 import { Button } from '@/app/components/ui/button';
 import { Badge } from '@/app/components/ui/badge';
@@ -196,6 +196,28 @@ export function RecordQRView({ token, onClose, language }: RecordQRViewProps) {
                   </div>
                 </div>
               </div>
+
+              {record.emergencyContactNumber && (
+                <div className="bg-red-950/20 border border-red-900/30 rounded-xl p-4 mb-8">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-xs text-red-400 uppercase font-bold flex items-center gap-1 mb-1">
+                        <Phone className="w-3 h-3" /> {t('Emergency Contact')}
+                      </p>
+                      <p className="text-lg font-bold text-white">{record.emergencyContactNumber}</p>
+                    </div>
+                    <Button 
+                      onClick={() => window.location.href = `tel:${record.emergencyContactNumber}`}
+                      className="bg-red-600 hover:bg-red-700 text-white rounded-full px-6"
+                    >
+                      <Phone className="w-4 h-4 mr-2" /> {t('Call Now')}
+                    </Button>
+                  </div>
+                  <p className="text-[10px] text-red-300/60 mt-2 italic">
+                    {t('Call this number immediately for patient relative assistance')}
+                  </p>
+                </div>
+              )}
 
               <div className="bg-zinc-800/30 rounded-xl p-4 border border-zinc-800 mb-8">
                 <p className="text-xs text-zinc-500 uppercase font-semibold mb-2">{t('Description / Notes')}</p>
