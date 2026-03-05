@@ -119,6 +119,7 @@ export const translations: Record<string, any> = {
     smartRemindersDesc: "You'll receive notifications 24 hours and 1 hour before each appointment via SMS and app notification.",
     viewSummary: "View Summary",
     completed: "Completed",
+    active: "Active",
     bookNewAppointment: "Book New Appointment",
     bookAppointmentDesc: "Enter details to schedule a new appointment with a healthcare professional.",
     doctorName: "Doctor Name",
@@ -384,6 +385,7 @@ export const translations: Record<string, any> = {
     smartRemindersDesc: "ഓരോ സന്ദർശനാനുമതിക്കും 24 മണിക്കൂർ മുമ്പും 1 മണിക്കൂർ മുമ്പും എസ്എംഎസ് വഴിയും ആപ്പിലെ അറിയിപ്പുകൾ വഴിയും നിങ്ങൾക്ക് വിവരങ്ങൾ ലഭിക്കും.",
     viewSummary: "സംഗ്രഹം കാണുക",
     completed: "പൂർത്തിയായി",
+    active: "സജീവം",
     bookNewAppointment: "പുതിയ സന്ദർശനാനുമതി ബുക്ക് ചെയ്യുക",
     bookAppointmentDesc: "ഒരു ആരോഗ്യ വിദഗ്ധനുമായി സന്ദർശനാനുമതി ഷെഡ്യൂൾ ചെയ്യുന്നതിന് വിവരങ്ങൾ നൽകുക.",
     doctorName: "ഡോക്ടറുടെ പേര്",
@@ -613,6 +615,7 @@ export const translations: Record<string, any> = {
     smartRemindersDesc: "आपको प्रत्येक नियुक्ति से २४ घंटे और १ घंटे पहले संदेश और ऐप सूचना के माध्यम से सूचनाएं प्राप्त होंगी।",
     viewSummary: "साराংশ देखें",
     completed: "पूरा हुआ",
+    active: "सक्रिय",
     // Schemes (Hindi)
     govtSchemes: "सरकारी योजनाएं और लाभ",
     personalizedHealthProfile: "आपके स्वास्थ्य प्रोफ़ाइल के लिए व्यक्तिगत",
@@ -786,6 +789,7 @@ export const translations: Record<string, any> = {
     smartRemindersDesc: "ஒவ்வொரு சந்திப்பிற்கும் 24 மணிநேரம் மற்றும் 1 மணிநேரத்திற்கு முன்பு எஸ்எம்எஸ் மற்றும் ஆப் அறிவிப்பு மூலம் உங்களுக்கு அறிவிப்புகள் வரும்.",
     viewSummary: "சுருக்கத்தைக் காண்க",
     completed: "முடிந்தது",
+    active: "செயலில் உள்ளது",
     // Schemes (Tamil)
     govtSchemes: "அரசு திட்டங்கள் மற்றும் நன்மைகள்",
     personalizedHealthProfile: "உங்கள் சுகாதார சுயவிவரத்திற்காக தனிப்பயனாக்கப்பட்டது",
@@ -959,6 +963,7 @@ export const translations: Record<string, any> = {
     smartRemindersDesc: "আপনি প্রতিটি অ্যাপয়েন্টমেন্টের ২৪ ঘণ্টা এবং ১ ঘণ্টা আগে এসএমএস এবং অ্যাপ নোটিফিকেশনের মাধ্যমে বিজ্ঞপ্তি পাবেন।",
     viewSummary: "সারসংক্ষেপ দেখুন",
     completed: "সম্পন্ন",
+    active: "সক্রিয়",
     // Schemes (Bengali)
     govtSchemes: "সরকারি স্কিম এবং সুবিধা",
     personalizedHealthProfile: "আপনার স্বাস্থ্য প্রোফাইলের জন্য ব্যক্তিগতকৃত",

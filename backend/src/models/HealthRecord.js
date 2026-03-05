@@ -14,10 +14,7 @@ const HealthRecordSchema = new mongoose.Schema({
   createdByRole: { type: String, enum: ['PATIENT','DOCTOR','ADMIN'], default: 'PATIENT' },
   visibility: { type: String, enum: ['private','shared','public'], default: 'private' },
   consentEnabled: { type: Boolean, default: false },
-  qrToken: { type: String },
-  // AI-ready fields
-  aiSummary: { type: String },
-  embedding: { type: [Number] }
+  qrToken: { type: String }
 }, { timestamps: true });
 
 module.exports = mongoose.model('HealthRecord', HealthRecordSchema);

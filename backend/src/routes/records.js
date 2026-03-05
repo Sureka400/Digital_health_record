@@ -7,6 +7,9 @@ const ctrl = require('../controllers/recordController');
 // ✅ Get all records for logged-in patient
 router.get('/', authenticate, ctrl.getRecords);
 
+// ✅ Get records of a specific patient (for doctor dashboard)
+router.get('/patient/:patientId', authenticate, ctrl.getPatientRecordsForDoctor);
+
 // ✅ Upload a new health record
 router.post('/', authenticate, upload.single('file'), ctrl.createRecord);
 

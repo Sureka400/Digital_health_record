@@ -39,7 +39,16 @@ const AppointmentSchema = new mongoose.Schema({
   },
   summary: {
     type: String
-  }
+  },
+  clinicalNotes: {
+    type: String // AI generated clinical notes
+  },
+  prescriptions: [{
+    medicine: String,
+    dosage: String,
+    duration: String,
+    instructions: String
+  }]
 }, { timestamps: true });
 
 module.exports = mongoose.model('Appointment', AppointmentSchema);

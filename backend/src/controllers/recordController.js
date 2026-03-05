@@ -1,6 +1,7 @@
 const HealthRecord = require('../models/HealthRecord');
 const Consent = require('../models/Consent');
 const Patient = require('../models/Patient');
+const Appointment = require('../models/Appointment');
 const { signToken, verifyToken } = require('../utils/jwt');
 const { OpenAI } = require('openai');
 
@@ -22,8 +23,12 @@ exports.getRecords = async (req, res, next) => {
       // Migrate: populate missing qrTokens
       for (const rec of records) {
         if (!rec.qrToken) {
-          rec.qrToken = signToken({ type: 'qr', recordId: rec._id, patientId: rec.patient }, { expiresIn: '3650d' });
-          await rec.save();
+          try {
+            rec.qrToken = signToken({ type: 'qr', recordId: rec._id.toString(), patientId: rec.patient.toString() }, { expiresIn: '3650d' });
+            await rec.save();
+          } catch (migrateErr) {
+            console.error(`Migration failed for record ${rec._id}:`, migrateErr.message);
+          }
         }
       }
 
@@ -70,6 +75,38 @@ exports.getRecords = async (req, res, next) => {
     
     res.status(403).json({ error: 'Forbidden' });
   } catch (err) { next(err); }
+};
+
+// Get records of a specific patient for a doctor (if authorized)
+exports.getPatientRecordsForDoctor = async (req, res, next) => {
+  try {
+    const { patientId } = req.params;
+    const userId = req.user.id;
+    const userName = req.user.name;
+
+    // Check if there is an appointment between this doctor and patient
+    const appointment = await Appointment.findOne({
+      patient: patientId,
+      doctor: userName
+    });
+
+    // Check if there is a consent
+    const consent = await Consent.findOne({
+      patient: patientId,
+      grantee: userId,
+      granted: true,
+      expiresAt: { $gt: new Date() }
+    });
+
+    if (!appointment && !consent && req.user.role !== 'ADMIN') {
+      return res.status(403).json({ error: 'Unauthorized: No appointment or consent found for this patient' });
+    }
+
+    const records = await HealthRecord.find({ patient: patientId }).sort({ createdAt: -1 });
+    res.json({ records });
+  } catch (err) {
+    next(err);
+  }
 };
 
 // Get a single record by ID
@@ -175,7 +212,7 @@ exports.createRecord = async (req, res, next) => {
     await rec.save();
     
     // Generate and save QR token for the record
-    const qrToken = signToken({ type: 'qr', recordId: rec._id, patientId: rec.patient }, { expiresIn: '3650d' }); // 10 years
+    const qrToken = signToken({ type: 'qr', recordId: rec._id.toString(), patientId: rec.patient.toString() }, { expiresIn: '3650d' }); // 10 years
     rec.qrToken = qrToken;
     await rec.save();
 
@@ -193,7 +230,7 @@ exports.createQrToken = async (req, res, next) => {
     
     // Use existing token if available, else generate new one
     if (!record.qrToken) {
-      record.qrToken = signToken({ type: 'qr', recordId: record._id, patientId: record.patient }, { expiresIn: '3650d' });
+      record.qrToken = signToken({ type: 'qr', recordId: record._id.toString(), patientId: record.patient.toString() }, { expiresIn: '3650d' });
       await record.save();
     }
     

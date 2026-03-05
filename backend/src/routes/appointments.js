@@ -6,6 +6,9 @@ const ctrl = require('../controllers/appointmentController');
 // Get all appointments for a patient
 router.get('/', authenticate, ctrl.getAppointments);
 
+// Get all appointments for a doctor
+router.get('/doctor', authenticate, ctrl.getDoctorAppointments);
+
 // Create a new appointment
 router.post('/', authenticate, ctrl.createAppointment);
 

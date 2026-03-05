@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { motion } from 'motion/react';
 import { Sparkles, Mic, Send, Bell, Volume2, MessageCircle, Loader2 } from 'lucide-react';
 import { Card } from '@/app/components/ui/card';
@@ -31,10 +31,67 @@ export function AIAssistantTab() {
   const [inputMessage, setInputMessage] = useState('');
   const [healthInsights, setHealthInsights] = useState<Insight[]>([]);
   const [loadingInsights, setLoadingInsights] = useState(true);
+  const [isELIMode, setIsELIMode] = useState(false);
+  const [isSpeaking, setIsSpeaking] = useState(false);
+  const [isTyping, setIsTyping] = useState(false);
+
+  const [shouldSpeakNext, setShouldSpeakNext] = useState(false);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
 
   useEffect(() => {
     fetchInsights();
   }, []);
+
+  useEffect(() => {
+    if (shouldSpeakNext && messages.length > 0) {
+      const lastMessage = messages[messages.length - 1];
+      if (lastMessage.type === 'ai') {
+        speak(lastMessage.content);
+        setShouldSpeakNext(false);
+      }
+    }
+  }, [messages, shouldSpeakNext]);
+
+  const speak = (text: string) => {
+    if ('speechSynthesis' in window) {
+      // Cancel any ongoing speech
+      window.speechSynthesis.cancel();
+      
+      const utterance = new SpeechSynthesisUtterance(text);
+      
+      // Map application language to speech recognition language
+      switch (language) {
+        case 'ml':
+          utterance.lang = 'ml-IN';
+          break;
+        case 'hi':
+          utterance.lang = 'hi-IN';
+          break;
+        case 'bn':
+          utterance.lang = 'bn-IN';
+          break;
+        case 'kn':
+          utterance.lang = 'kn-IN';
+          break;
+        default:
+          utterance.lang = 'en-US';
+      }
+
+      utterance.onstart = () => setIsSpeaking(true);
+      utterance.onend = () => setIsSpeaking(false);
+      utterance.onerror = () => setIsSpeaking(false);
+      
+      window.speechSynthesis.speak(utterance);
+    }
+  };
 
   const fetchInsights = async () => {
     setLoadingInsights(true);
@@ -51,6 +108,8 @@ export function AIAssistantTab() {
 
   const { isListening, startListening } = useVoice((result) => {
     setInputMessage(result);
+    // Automatically send if voice result received
+    setTimeout(() => handleSendMessage(result), 500);
   }, language);
 
   const quickActions = [
@@ -60,18 +119,20 @@ export function AIAssistantTab() {
     '🏥 Nearby hospitals',
   ];
 
-  const handleSendMessage = async () => {
-    if (!inputMessage.trim()) return;
+  const handleSendMessage = async (overrideMessage?: string) => {
+    const messageText = overrideMessage || inputMessage;
+    if (!messageText.trim()) return;
 
     const newUserMessage: Message = {
       id: Date.now().toString(),
       type: 'user',
-      content: inputMessage,
+      content: messageText,
       timestamp: new Date().toISOString(),
     };
 
     setMessages(prev => [...prev, newUserMessage]);
-    setInputMessage('');
+    if (!overrideMessage) setInputMessage('');
+    if (isELIMode) setShouldSpeakNext(true);
 
     try {
       const history = messages.map(m => ({
@@ -79,12 +140,16 @@ export function AIAssistantTab() {
         content: m.content
       }));
       
+      const prompt = isELIMode && !overrideMessage
+        ? `Explain the following query in very simple terms, as if you are talking to a 10-year-old child. Avoid medical jargon. Query: ${messageText}`
+        : messageText;
+
       const res = await api.post('/records/ai/chat', { 
-        message: inputMessage,
+        message: prompt,
         history: history
       });
       const aiResponse: Message = {
-        id: Date.now().toString(),
+        id: (Date.now() + 1).toString(),
         type: 'ai',
         content: res.response,
         timestamp: new Date().toISOString(),
@@ -92,7 +157,7 @@ export function AIAssistantTab() {
       setMessages((prev) => [...prev, aiResponse]);
     } catch (err: any) {
       const errorResponse: Message = {
-        id: Date.now().toString(),
+        id: (Date.now() + 1).toString(),
         type: 'ai',
         content: 'Sorry, I am having trouble connecting to the server. ' + (err.message || ''),
         timestamp: new Date().toISOString(),
@@ -108,10 +173,10 @@ export function AIAssistantTab() {
   return (
     <div className="space-y-6">
       {/* AI Header */}
-      <Card className="bg-gradient-to-r from-purple-50 to-blue-50 border-purple-200">
+      <Card className="!bg-yellow-400 border-yellow-500 text-black">
         <div className="flex items-center gap-3">
           <motion.div
-            className="p-3 bg-gradient-to-br from-purple-500 to-blue-500 rounded-xl"
+            className="p-3 bg-black rounded-xl"
             animate={{
               scale: [1, 1.05, 1],
             }}
@@ -120,16 +185,36 @@ export function AIAssistantTab() {
               repeat: Infinity,
             }}
           >
-            <Sparkles className="w-6 h-6 text-white" />
+            <Sparkles className="w-6 h-6 text-yellow-400" />
           </motion.div>
           <div>
-            <h2 className="text-xl font-bold text-foreground">{t('aiHealthAssistant')}</h2>
-            <p className="text-sm text-muted-foreground">
+            <h2 className="text-xl font-bold text-black">{t('aiHealthAssistant')}</h2>
+            <p className="text-sm text-black font-medium">
               {t('multilingualVoiceEnabled')}
             </p>
           </div>
         </div>
       </Card>
+
+      {/* Smart Reminders (Moved from Appointments) */}
+      <motion.div
+        initial={{ opacity: 0, y: -10 }}
+        animate={{ opacity: 1, y: 0 }}
+      >
+        <Card className="!bg-yellow-300 border-yellow-400 shadow-sm hover:shadow-md transition-all text-black">
+          <div className="flex items-start gap-4">
+            <div className="p-2 bg-black/10 rounded-lg">
+              <Bell className="w-6 h-6 text-black animate-bounce" />
+            </div>
+            <div>
+              <h3 className="font-semibold text-black mb-1">{t('smartReminders')}</h3>
+              <p className="text-sm text-black leading-relaxed font-medium">
+                {t('smartRemindersDesc')}
+              </p>
+            </div>
+          </div>
+        </Card>
+      </motion.div>
 
       {/* Health Insights */}
       <div className="space-y-3">
@@ -193,17 +278,21 @@ export function AIAssistantTab() {
               className={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}
             >
               <div
-                className={`max-w-[80%] rounded-2xl px-4 py-3 ${
+                onClick={() => message.type === 'ai' && speak(message.content)}
+                className={`max-w-[80%] rounded-2xl px-4 py-3 cursor-pointer group transition-all ${
                   message.type === 'user'
                     ? 'bg-[#0b6e4f] text-white'
-                    : 'bg-muted text-foreground'
+                    : 'bg-muted text-foreground hover:bg-muted/80'
                 }`}
               >
                 {message.type === 'ai' && (
-                  <Badge variant="ai" className="mb-2">
-                    <Sparkles className="w-3 h-3" />
-                    {t('aiAssistant')}
-                  </Badge>
+                  <div className="flex items-center justify-between mb-2">
+                    <Badge variant="ai">
+                      <Sparkles className="w-3 h-3" />
+                      {t('aiAssistant')}
+                    </Badge>
+                    <Volume2 className={`w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors ${isSpeaking ? 'animate-pulse text-primary' : ''}`} />
+                  </div>
                 )}
                 <p className="text-sm whitespace-pre-line">{message.content}</p>
                 <p className={`text-xs mt-1 ${
@@ -217,6 +306,7 @@ export function AIAssistantTab() {
               </div>
             </motion.div>
           ))}
+          <div ref={messagesEndRef} />
         </div>
 
         {/* Quick Actions */}
@@ -267,19 +357,66 @@ export function AIAssistantTab() {
       </Card>
 
       {/* "Explain like I'm 10" Feature */}
-      <Card className="bg-gradient-to-r from-orange-50 to-yellow-50 border-orange-200">
-        <div className="flex items-start gap-3">
-          <div className="text-2xl">🧒</div>
-          <div>
-            <h3 className="font-semibold text-foreground mb-1">
-              {t('explainLike10')}
-            </h3>
-            <p className="text-sm text-muted-foreground mb-3">
+      <Card className={`transition-all duration-300 ${
+        isELIMode 
+          ? 'bg-gradient-to-br from-[#ffd54f] to-[#ffb300] border-amber-400 shadow-lg scale-[1.02]' 
+          : '!bg-yellow-400 border-yellow-500 shadow-sm text-black'
+      }`}>
+        <div className="flex items-start gap-4">
+          <motion.div 
+            className="text-4xl"
+            animate={isELIMode ? {
+              rotate: [0, 10, -10, 0],
+              scale: [1, 1.1, 1]
+            } : {}}
+            transition={{ duration: 2, repeat: Infinity }}
+          >
+            🧒
+          </motion.div>
+          <div className="flex-1">
+            <div className="flex items-center justify-between mb-2">
+              <h3 className={`font-bold text-lg ${isELIMode ? 'text-amber-900' : 'text-black'}`}>
+                {t('explainLike10')}
+              </h3>
+              <div 
+                onClick={() => setIsELIMode(!isELIMode)}
+                className={`w-12 h-6 rounded-full cursor-pointer transition-colors relative ${
+                  isELIMode ? 'bg-amber-700' : 'bg-gray-300'
+                }`}
+              >
+                <motion.div 
+                  className="absolute top-1 left-1 w-4 h-4 bg-white rounded-full"
+                  animate={{ x: isELIMode ? 24 : 0 }}
+                />
+              </div>
+            </div>
+            <p className={`text-sm mb-4 leading-relaxed ${isELIMode ? 'text-amber-800 font-medium' : 'text-black font-medium'}`}>
               {t('explainLike10Desc')}
             </p>
-            <Button variant="outline" size="sm" icon={<Volume2 className="w-4 h-4" />}>
-              {t('tryVoiceExplanation')}
-            </Button>
+            <div className="flex gap-3">
+              <Button 
+                variant={isELIMode ? "secondary" : "outline"} 
+                size="sm" 
+                className={isELIMode ? "bg-amber-800 text-white border-none hover:bg-amber-900" : ""}
+                icon={isSpeaking ? <Loader2 className="w-4 h-4 animate-spin" /> : <Volume2 className="w-4 h-4" />}
+                onClick={() => {
+                  const lastAIMessage = [...messages].reverse().find(m => m.type === 'ai');
+                  if (lastAIMessage) {
+                    setShouldSpeakNext(true);
+                    handleSendMessage(`Please explain your previous response in very simple terms (Explain like I'm 10): "${lastAIMessage.content}"`);
+                  } else {
+                    speak(t('explainLike10Desc'));
+                  }
+                }}
+              >
+                {t('tryVoiceExplanation')}
+              </Button>
+              {isELIMode && (
+                <Badge className="bg-amber-900 text-amber-50 border-none animate-pulse">
+                  {t('active')}
+                </Badge>
+              )}
+            </div>
           </div>
         </div>
       </Card>

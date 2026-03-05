@@ -185,7 +185,7 @@ export function AppointmentsTab() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.1 }}
               >
-                <Card hover className="bg-gradient-to-r from-white to-[#e8f5e9]">
+                <Card hover className="bg-gradient-to-r from-green-50 to-[#e8f5e9] border-green-200">
                   <div className="flex items-start gap-4">
                     {/* Date Badge */}
                     <div className="flex-shrink-0 text-center bg-[#0b6e4f] text-white rounded-xl p-3">
@@ -248,18 +248,6 @@ export function AppointmentsTab() {
         </div>
       </div>
 
-      {/* Smart Reminders Card */}
-      <Card className="bg-gradient-to-r from-blue-50 to-purple-50 border-blue-200">
-        <div className="flex items-start gap-3">
-          <div className="text-2xl">🔔</div>
-          <div>
-            <h3 className="font-semibold text-foreground mb-1">{t('smartReminders')}</h3>
-            <p className="text-sm text-muted-foreground">
-              {t('smartRemindersDesc')}
-            </p>
-          </div>
-        </div>
-      </Card>
 
       {/* Past Appointments */}
       {pastAppointments.length > 0 && (

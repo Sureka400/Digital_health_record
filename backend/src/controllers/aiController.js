@@ -2,6 +2,7 @@ const { OpenAI } = require('openai');
 const Scheme = require('../models/Scheme');
 const Patient = require('../models/Patient');
 const HealthRecord = require('../models/HealthRecord');
+const Appointment = require('../models/Appointment');
 
 // Initialize OpenAI client for Groq or Gemini (using OpenAI compatibility)
 const openai = new OpenAI({
@@ -66,15 +67,14 @@ exports.generateSchemeRecommendations = generateSchemeRecommendations;
 
 exports.askAI = async (req, res) => {
   try {
-    const { message, history } = req.body;
+    const { message } = req.body;
 
     if (!message) {
       return res.status(400).json({ message: 'Message is required' });
     }
 
     const messages = [
-      { role: 'system', content: 'You are a helpful AI assistant for a Digital Health Record application.' },
-      ...(history || []),
+      { role: 'system', content: 'You are a helpful AI assistant for a Digital Health Record application. You process data but do not learn or maintain history.' },
       { role: 'user', content: message }
     ];
 
@@ -109,7 +109,7 @@ exports.getAiSchemeRecommendations = async (req, res) => {
 
 exports.chatAboutSchemes = async (req, res) => {
   try {
-    const { message, history } = req.body;
+    const { message } = req.body;
     const patient = await Patient.findById(req.user.id);
     const schemes = await Scheme.find({});
     const records = await HealthRecord.find({ patient: patient._id });
@@ -140,8 +140,8 @@ exports.chatAboutSchemes = async (req, res) => {
       benefits: s.benefits
     }));
 
-    const systemPrompt = `You are an expert AI assistant for government health schemes in Kerala, India. 
-    You have access to the patient's profile, their health history, and the available schemes.
+    const systemPrompt = `You are a static AI assistant for government health schemes in Kerala, India. 
+    You provide information based solely on the provided patient profile and available schemes.
     
     Patient Profile & Health History:
     ${JSON.stringify(patientData, null, 2)}
@@ -149,13 +149,10 @@ exports.chatAboutSchemes = async (req, res) => {
     Available Schemes:
     ${JSON.stringify(schemeData, null, 2)}
     
-    Answer the patient's questions about schemes based on their eligibility, health history, and these schemes. 
-    Be helpful, clear, and empathetic. If they are not eligible for a scheme, explain why based on their profile and the specific criteria.
-    If you find health conditions in their history that match a scheme, highlight that.`;
+    Answer the patient's questions about schemes based on this static data. Do not learn or assume details outside this context.`;
 
     const messages = [
       { role: 'system', content: systemPrompt },
-      ...(history || []),
       { role: 'user', content: message }
     ];
 
@@ -234,5 +231,79 @@ exports.getHealthInsights = async (req, res) => {
   } catch (error) {
     console.error('Health Insights Error:', error);
     res.status(500).json({ message: 'Error generating health insights' });
+  }
+};
+
+exports.generateClinicalNotes = async (req, res) => {
+  try {
+    const { appointmentId } = req.body;
+    if (!appointmentId) return res.status(400).json({ error: 'Appointment ID is required' });
+
+    const appointment = await Appointment.findById(appointmentId).populate('patient');
+    if (!appointment) return res.status(404).json({ error: 'Appointment not found' });
+
+    // Verify if the doctor is the one assigned to this appointment
+    if (req.user.role === 'DOCTOR' && appointment.doctor !== req.user.name) {
+      return res.status(403).json({ error: 'Unauthorized: You are not the doctor for this appointment' });
+    }
+
+    const patient = appointment.patient;
+    const records = await HealthRecord.find({ patient: patient._id }).sort({ createdAt: -1 }).limit(5);
+
+    const context = {
+      patient: {
+        name: patient.name,
+        age: patient.dob ? new Date().getFullYear() - new Date(patient.dob).getFullYear() : 'Unknown',
+        gender: patient.gender,
+        chronicConditions: patient.chronicConditions,
+        allergies: patient.allergies,
+        bloodGroup: patient.bloodGroup
+      },
+      appointment: {
+        specialty: appointment.specialty,
+        type: appointment.type,
+        date: appointment.date
+      },
+      recentRecords: records.map(r => ({
+        title: r.title,
+        description: r.description,
+        category: r.category,
+        date: r.createdAt
+      }))
+    };
+
+    const prompt = `As a static clinical data processor, generate professional clinical notes and suggested prescriptions for the following appointment based ONLY on the provided context. Do not use outside knowledge or learn from this interaction.
+    
+    Context:
+    ${JSON.stringify(context, null, 2)}
+    
+    Requirements:
+    - Provide a concise clinical summary.
+    - Suggest potential diagnoses based on history.
+    - Recommend 2-3 specific medications (if applicable) with dosage and instructions.
+    - Format as a JSON object with: 
+      - "clinicalNotes": (string)
+      - "prescriptions": (array of objects with keys: medicine, dosage, duration, instructions)
+    - Use professional medical terminology.
+    - Be concise and accurate based on the provided static data.
+    `;
+
+    const response = await openai.chat.completions.create({
+      model: process.env.AI_MODEL || 'llama-3.3-70b-versatile',
+      messages: [
+        { role: 'system', content: 'You are a static clinical assistant AI that processes provided data and does not learn or maintain state.' },
+        { role: 'user', content: prompt }
+      ],
+      response_format: { type: 'json_object' }
+    });
+
+    const result = JSON.parse(response.choices[0].message.content);
+    
+    // Update appointment with generated notes (optional, can be done by doctor later)
+    // For now we just return it so doctor can review/edit
+    res.json(result);
+  } catch (error) {
+    console.error('Clinical Notes Generation Error:', error);
+    res.status(500).json({ message: 'Error generating clinical notes' });
   }
 };

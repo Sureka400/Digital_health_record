@@ -33,9 +33,6 @@ const PatientSchema = new mongoose.Schema({
     status: { type: String, enum: ['Pending', 'Approved', 'Rejected'], default: 'Pending' },
     appliedAt: { type: Date, default: Date.now }
   }],
-  // AI-ready fields
-  aiSummary: { type: String },
-  embedding: { type: [Number] },
   // emergency access token hash and flag
   emergency: {
     enabled: { type: Boolean, default: false },

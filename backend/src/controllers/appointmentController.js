@@ -3,6 +3,17 @@ const Appointment = require('../models/Appointment');
 exports.getAppointments = async (req, res, next) => {
   try {
     const appointments = await Appointment.find({ patient: req.user.id })
+      .populate('patient', 'name email abhaId')
+      .sort({ date: 1, time: 1 });
+    res.json({ appointments });
+  } catch (err) { next(err); }
+};
+
+exports.getDoctorAppointments = async (req, res, next) => {
+  try {
+    // Filter by doctor's name as stored in the appointment
+    const appointments = await Appointment.find({ doctor: req.user.name })
+      .populate('patient', 'name email abhaId dob gender chronicConditions')
       .sort({ date: 1, time: 1 });
     res.json({ appointments });
   } catch (err) { next(err); }
@@ -29,8 +40,14 @@ exports.updateAppointment = async (req, res, next) => {
   try {
     const { id } = req.params;
     const updateFields = req.body;
+    // Patient can update their own appointment
+    let query = { _id: id, patient: req.user.id };
+    // Doctor can update appointment they are assigned to
+    if (req.user.role === 'DOCTOR') {
+      query = { _id: id, doctor: req.user.name };
+    }
     const appointment = await Appointment.findOneAndUpdate(
-      { _id: id, patient: req.user.id },
+      query,
       updateFields,
       { new: true }
     );
@@ -42,10 +59,22 @@ exports.updateAppointment = async (req, res, next) => {
 exports.updateAppointmentStatus = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const { status, summary } = req.body;
+    const { status, summary, clinicalNotes, prescriptions } = req.body;
+    
+    let query = { _id: id };
+    if (req.user.role === 'DOCTOR') {
+      query.doctor = req.user.name;
+    } else {
+      query.patient = req.user.id;
+    }
+
+    const update = { status, summary };
+    if (clinicalNotes) update.clinicalNotes = clinicalNotes;
+    if (prescriptions) update.prescriptions = prescriptions;
+
     const appointment = await Appointment.findOneAndUpdate(
-      { _id: id, patient: req.user.id },
-      { status, summary },
+      query,
+      update,
       { new: true }
     );
     if (!appointment) return res.status(404).json({ error: 'Appointment not found' });
