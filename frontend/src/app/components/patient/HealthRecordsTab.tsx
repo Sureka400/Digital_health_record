@@ -141,15 +141,30 @@ export function HealthRecordsTab({ onNavigate }: HealthRecordsTabProps) {
     try {
       const res: any = await api.post(`/records/${recordId}/qr`, {});
       const token = res.qrToken;
+      
+      // Construct share link using the current origin (includes IP if accessing via IP)
       const shareLink = `${window.location.origin}/qr/${token}`;
-      await navigator.clipboard.writeText(shareLink).catch(() => {});
-      alert('Share link copied to clipboard');
+      
+      // Use the Web Share API if available (mobile support)
+      if (navigator.share) {
+        await navigator.share({
+          title: t('Medical Record Details'),
+          text: t('Scan this QR code to view the record details'),
+          url: shareLink,
+        });
+      } else {
+        await navigator.clipboard.writeText(shareLink);
+        alert('Share link copied to clipboard');
+      }
+      
       if (onNavigate) {
         onNavigate('qr');
       }
     } catch (err: any) {
-      console.error('Share failed', err);
-      alert(err.message || 'Share failed');
+      if (err.name !== 'AbortError') {
+        console.error('Share failed', err);
+        alert(err.message || 'Share failed');
+      }
     }
   };
 
@@ -519,6 +534,23 @@ function SuccessQRDialog({ record, qrToken, open, onOpenChange, t }: any) {
   const shareLink = `${window.location.origin}/qr/${qrToken}`;
   const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(shareLink)}`;
 
+  const handleShare = async () => {
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: t('Medical Record Details'),
+          text: t('Scan this QR code to view the record details'),
+          url: shareLink,
+        });
+      } catch (err: any) {
+        if (err.name !== 'AbortError') console.error('Share failed', err);
+      }
+    } else {
+      await navigator.clipboard.writeText(shareLink);
+      alert('Link copied to clipboard');
+    }
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-sm bg-zinc-950 border-zinc-800 text-white text-center">
@@ -544,17 +576,14 @@ function SuccessQRDialog({ record, qrToken, open, onOpenChange, t }: any) {
           <div className="flex gap-2">
             <Button 
               variant="outline" 
-              className="flex-1 border-zinc-800 hover:bg-zinc-900"
-              onClick={() => {
-                navigator.clipboard.writeText(shareLink);
-                alert('Link copied to clipboard');
-              }}
+              className="flex-1 border-zinc-800 hover:bg-zinc-900 text-white"
+              onClick={handleShare}
             >
               <Share2 className="w-4 h-4 mr-2" />
-              {t('Copy Link')}
+              {navigator.share ? t('share') : t('Copy Link')}
             </Button>
             <Button 
-              className="flex-1 bg-[#0b6e4f] hover:bg-[#0b6e4f]/90"
+              className="flex-1 bg-[#0b6e4f] hover:bg-[#0b6e4f]/90 text-white"
               onClick={() => onOpenChange(false)}
             >
               Done

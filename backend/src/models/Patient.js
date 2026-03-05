@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
+const { Wallet } = require('ethers');
 const { encryptField, decryptField } = require('../utils/crypto');
 
 const roles = ['PATIENT', 'DOCTOR', 'ADMIN'];
@@ -22,6 +23,8 @@ const PatientSchema = new mongoose.Schema({
   chronicConditions: [{ type: String }],
   employmentType: { type: String },
   bloodGroup: { type: String },
+  blockchainId: { type: String, unique: true, sparse: true },
+  isProfileComplete: { type: Boolean, default: false },
   allergies: [{ type: String }],
   emergencyContact: {
     name: { type: String },
@@ -47,10 +50,28 @@ PatientSchema.virtual('phone')
   .get(function () { return this.phone_enc ? decryptField(this.phone_enc) : null; })
   .set(function (v) { this.phone_enc = v ? encryptField(v) : null; });
 
+PatientSchema.virtual('age')
+  .get(function () {
+    if (!this.dob) return null;
+    const diff = Date.now() - this.dob.getTime();
+    const ageDate = new Date(diff);
+    return Math.abs(ageDate.getUTCFullYear() - 1970);
+  });
+
 PatientSchema.pre('save', async function (next) {
   if (this.isModified('password')) {
     const salt = await bcrypt.genSalt(10);
     this.password = await bcrypt.hash(this.password, salt);
+  }
+
+  if (!this.blockchainId) {
+    const wallet = Wallet.createRandom();
+    this.blockchainId = wallet.address;
+  }
+  
+  // Set isProfileComplete if all mandatory fields are present
+  if (!this.isProfileComplete && this.name && this.dob && this.gender && this.bloodGroup) {
+    this.isProfileComplete = true;
   }
   next();
 });

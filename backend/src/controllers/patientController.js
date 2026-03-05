@@ -1,7 +1,9 @@
 const Patient = require('../models/Patient');
 const HealthRecord = require('../models/HealthRecord');
+const Appointment = require('../models/Appointment');
 const Consent = require('../models/Consent');
 const crypto = require('crypto');
+const QRCode = require('qrcode');
 const { signToken, verifyToken } = require('../utils/jwt');
 
 // Get current user's profile
@@ -81,7 +83,10 @@ exports.getDashboard = async (req, res, next) => {
 // Update profile (patient only or admin)
 exports.updateProfile = async (req, res, next) => {
   try {
-    const allowed = ['name', 'preferredLanguage', 'phone', 'bloodGroup', 'allergies', 'emergencyContact', 'dob', 'gender'];
+    const user = await Patient.findById(req.user.id);
+    if (!user) return res.status(404).json({ error: 'Not found' });
+
+    const allowed = ['name', 'preferredLanguage', 'phone', 'bloodGroup', 'allergies', 'emergencyContact', 'dob', 'gender', 'abhaId'];
     const updates = {};
     
     allowed.forEach(k => { 
@@ -90,25 +95,67 @@ exports.updateProfile = async (req, res, next) => {
         if ((k === 'dob' || k === 'gender') && req.body[k] === '') {
           updates[k] = null;
         } else if (req.body[k] !== undefined) {
+          // Once profile is complete, name, bloodGroup and abhaId become static
+          if (user.isProfileComplete && (k === 'bloodGroup' || k === 'abhaId' || k === 'name')) {
+             return;
+          }
           updates[k] = req.body[k];
         }
       }
     });
-
-    const user = await Patient.findById(req.user.id);
-    if (!user) return res.status(404).json({ error: 'Not found' });
 
     // Apply updates manually to ensure virtuals and other logic are triggered correctly
     Object.keys(updates).forEach(key => {
       user[key] = updates[key];
     });
 
+    // If it's the first time completing the profile
+    if (!user.isProfileComplete && user.dob && user.bloodGroup && user.gender) {
+      user.isProfileComplete = true;
+    }
+
     await user.save();
-    res.json({ ok: true });
+    res.json({ ok: true, user });
   } catch (err) {
     console.error('Update Profile Error:', err);
     res.status(400).json({ error: err.message || 'Failed to update profile' });
   }
+};
+
+// Generate QR Code for Patient
+exports.getQRCode = async (req, res, next) => {
+  try {
+    const user = await Patient.findById(req.user.id);
+    if (!user) return res.status(404).json({ error: 'Not found' });
+
+    // The QR code should point to a public profile URL
+    // We'll use the blockchainId as a unique identifier
+    // Use FRONTEND_URL from env or try to derive it from Origin header
+    const origin = req.get('origin');
+    const frontendUrl = process.env.FRONTEND_URL || origin || 'http://localhost:5173';
+    const publicUrl = `${frontendUrl}/public-profile/${user.blockchainId}`;
+    const qrCodeDataUrl = await QRCode.toDataURL(publicUrl);
+    
+    res.json({ qrCodeDataUrl, blockchainId: user.blockchainId });
+  } catch (err) { next(err); }
+};
+
+// Get Public Profile by blockchainId
+exports.getPublicProfile = async (req, res, next) => {
+  try {
+    const { blockchainId } = req.params;
+    const patient = await Patient.findOne({ blockchainId }).select('name age gender bloodGroup blockchainId');
+    if (!patient) return res.status(404).json({ error: 'Patient not found' });
+
+    const healthRecords = await HealthRecord.find({ patient: patient._id }).sort({ createdAt: -1 });
+    const appointments = await Appointment.find({ patient: patient._id }).sort({ date: -1 });
+
+    res.json({
+      patient,
+      healthRecords,
+      appointments
+    });
+  } catch (err) { next(err); }
 };
 
 // Enable emergency access: generate one-time emergency token with expiry stored hashed

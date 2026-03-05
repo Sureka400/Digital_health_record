@@ -8,6 +8,7 @@ import { useLanguage } from '@/app/context/LanguageContext';
 import { api } from '@/app/utils/api';
 
 import { RecordQRView } from '@/app/components/patient/RecordQRView';
+import { PublicProfileView } from '@/app/components/patient/PublicProfileView';
 
 type AppScreen = 'language' | 'login' | 'dashboard';
 type UserRole = 'patient' | 'doctor' | 'admin' | null;
@@ -18,6 +19,7 @@ export default function App() {
   const [userRole, setUserRole] = useState<UserRole>(null);
   const [user, setUser] = useState<any>(null);
   const [qrToken, setQrToken] = useState<string | null>(null);
+  const [publicBlockchainId, setPublicBlockchainId] = useState<string | null>(null);
 
   useEffect(() => {
     // Check for QR token in URL
@@ -26,6 +28,11 @@ export default function App() {
       const token = path.split('/qr/')[1];
       if (token) {
         setQrToken(token);
+      }
+    } else if (path.startsWith('/public-profile/')) {
+      const bId = path.split('/public-profile/')[1];
+      if (bId) {
+        setPublicBlockchainId(bId);
       }
     }
 
@@ -77,6 +84,18 @@ export default function App() {
           language={language} 
           onClose={() => {
             setQrToken(null);
+            window.history.pushState({}, '', '/');
+          }} 
+        />
+      )}
+
+      {/* Public Profile View - Overlays everything when scanning blockchain QR */}
+      {publicBlockchainId && (
+        <PublicProfileView 
+          blockchainId={publicBlockchainId} 
+          language={language} 
+          onClose={() => {
+            setPublicBlockchainId(null);
             window.history.pushState({}, '', '/');
           }} 
         />

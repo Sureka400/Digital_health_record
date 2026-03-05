@@ -13,6 +13,12 @@ router.get('/dashboard', authenticate, ctrl.getDashboard);
 // ✅ Update patient profile
 router.put('/me', authenticate, ctrl.updateProfile);
 
+// ✅ Get QR Code
+router.get('/me/qr-code', authenticate, ctrl.getQRCode);
+
+// ✅ Public Profile
+router.get('/public-profile/:blockchainId', ctrl.getPublicProfile);
+
 // ✅ Schemes
 router.get('/schemes', authenticate, schemeCtrl.checkEligibility);
 router.post('/schemes/:schemeId/apply', authenticate, schemeCtrl.applyToScheme);

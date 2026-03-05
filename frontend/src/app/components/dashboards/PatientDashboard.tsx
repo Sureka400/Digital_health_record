@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
-import { QrCode, FileText, MessageCircle, Calendar, Gift, AlertCircle, LogOut, Globe, User, Camera } from 'lucide-react';
+import { QrCode, FileText, MessageCircle, Calendar, Gift, AlertCircle, LogOut, Globe, User, Camera, CheckCircle2 } from 'lucide-react';
 import { HealthQRTab } from '@/app/components/patient/HealthQRTab';
 import { HealthRecordsTab } from '@/app/components/patient/HealthRecordsTab';
 import { AIAssistantTab } from '@/app/components/patient/AIAssistantTab';
@@ -9,6 +9,7 @@ import { SchemesTab } from '@/app/components/patient/SchemesTab';
 import { EmergencyTab } from '@/app/components/patient/EmergencyTab';
 import { useTranslation } from '@/app/utils/translations';
 import { useLanguage } from '@/app/context/LanguageContext';
+import { api } from '@/app/utils/api';
 import { 
   Dialog, 
   DialogContent, 
@@ -19,6 +20,7 @@ import {
 } from '@/app/components/ui/dialog';
 import { Button } from '@/app/components/ui/button';
 import { Input } from '@/app/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/app/components/ui/select';
 
 interface PatientDashboardProps {
   onLogout: () => void;
@@ -26,12 +28,44 @@ interface PatientDashboardProps {
   user: any;
 }
 
-export function PatientDashboard({ onLogout, language, user }: PatientDashboardProps) {
+export function PatientDashboard({ onLogout, language, user: initialUser }: PatientDashboardProps) {
   const { setLanguage } = useLanguage();
   const { t } = useTranslation(language);
   const [activeTab, setActiveTab] = useState('qr');
   const [showScanDialog, setShowScanDialog] = useState(false);
   const [scanToken, setScanToken] = useState('');
+  const [user, setUser] = useState(initialUser);
+  const [showProfileModal, setShowProfileModal] = useState(false);
+  const [profileData, setProfileData] = useState({
+    name: initialUser?.name || '',
+    dob: '',
+    gender: '',
+    bloodGroup: '',
+    abhaId: ''
+  });
+
+  useEffect(() => {
+    if (initialUser) {
+      setUser(initialUser);
+      setProfileData(prev => ({ ...prev, name: initialUser.name }));
+      if (!initialUser.isProfileComplete) {
+        setShowProfileModal(true);
+      }
+    }
+  }, [initialUser]);
+
+  const handleProfileSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      const res = await api.put('/patients/me', profileData);
+      if (res.ok) {
+        setUser(res.user);
+        setShowProfileModal(false);
+      }
+    } catch (err) {
+      console.error('Failed to update profile', err);
+    }
+  };
 
   const handleScanSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -157,6 +191,92 @@ export function PatientDashboard({ onLogout, language, user }: PatientDashboardP
           {activeTab === 'emergency' && <EmergencyTab />}
         </motion.div>
       </div>
+
+      {/* Profile Completion Modal */}
+      <Dialog open={showProfileModal} onOpenChange={() => {}}>
+        <DialogContent className="sm:max-w-md bg-zinc-950 border-zinc-800 text-white" onPointerDownOutside={(e) => e.preventDefault()}>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <User className="w-5 h-5 text-[#0b6e4f]" /> Complete Your Profile
+            </DialogTitle>
+            <DialogDescription>
+              Please provide these details for the first time. Some fields will become permanent after submission.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <form onSubmit={handleProfileSubmit} className="space-y-4 py-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-zinc-400">Full Name (Static after submit)</label>
+              <Input 
+                required
+                value={profileData.name}
+                onChange={(e) => setProfileData({ ...profileData, name: e.target.value })}
+                className="bg-zinc-900 border-zinc-800 text-white"
+                placeholder="Enter your full name"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-zinc-400">Date of Birth</label>
+              <Input 
+                type="date"
+                required
+                value={profileData.dob}
+                onChange={(e) => setProfileData({ ...profileData, dob: e.target.value })}
+                className="bg-zinc-900 border-zinc-800 text-white"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-zinc-400">Gender</label>
+              <Select 
+                onValueChange={(val) => setProfileData({ ...profileData, gender: val })}
+                required
+              >
+                <SelectTrigger className="bg-zinc-900 border-zinc-800 text-white">
+                  <SelectValue placeholder="Select Gender" />
+                </SelectTrigger>
+                <SelectContent className="bg-zinc-900 border-zinc-800 text-white">
+                  <SelectItem value="Male">Male</SelectItem>
+                  <SelectItem value="Female">Female</SelectItem>
+                  <SelectItem value="Other">Other</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-zinc-400">Blood Group (Static after submit)</label>
+              <Select 
+                onValueChange={(val) => setProfileData({ ...profileData, bloodGroup: val })}
+                required
+              >
+                <SelectTrigger className="bg-zinc-900 border-zinc-800 text-white">
+                  <SelectValue placeholder="Select Blood Group" />
+                </SelectTrigger>
+                <SelectContent className="bg-zinc-900 border-zinc-800 text-white">
+                  {['A+', 'A-', 'B+', 'B-', 'O+', 'O-', 'AB+', 'AB-'].map(bg => (
+                    <SelectItem key={bg} value={bg}>{bg}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-zinc-400">ABHA ID (Static after submit)</label>
+              <Input 
+                placeholder="Enter ABHA ID"
+                value={profileData.abhaId}
+                onChange={(e) => setProfileData({ ...profileData, abhaId: e.target.value })}
+                className="bg-zinc-900 border-zinc-800 text-white"
+              />
+            </div>
+
+            <Button type="submit" className="w-full bg-[#0b6e4f] hover:bg-[#0b6e4f]/90 text-white mt-4">
+              <CheckCircle2 className="w-4 h-4 mr-2" /> Save Profile & Generate Blockchain ID
+            </Button>
+          </form>
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={showScanDialog} onOpenChange={setShowScanDialog}>
         <DialogContent className="sm:max-w-md bg-zinc-950 border-zinc-800 text-white">

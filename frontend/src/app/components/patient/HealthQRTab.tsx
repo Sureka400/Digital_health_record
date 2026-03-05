@@ -10,27 +10,25 @@ import { api } from '@/app/utils/api';
 export function HealthQRTab({ user }: { user: any }) {
   const { language } = useLanguage();
   const { t } = useTranslation(language);
-  const [qrToken, setQrToken] = useState<string | null>(null);
+  const [qrData, setQrData] = useState<{ qrCodeDataUrl: string, blockchainId: string } | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetchQrToken();
+    fetchQrData();
   }, []);
 
-  const fetchQrToken = async () => {
+  const fetchQrData = async () => {
     try {
-      const res = await api.get('/records/profile/qr');
-      setQrToken(res.qrToken);
+      const res = await api.get('/patients/me/qr-code');
+      setQrData(res);
     } catch (err) {
-      console.error('Failed to fetch QR token', err);
+      console.error('Failed to fetch QR data', err);
     } finally {
       setLoading(false);
     }
   };
 
-  const qrUrl = qrToken 
-    ? `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(`${window.location.origin}/qr/${qrToken}`)}`
-    : null;
+  const qrUrl = qrData?.qrCodeDataUrl;
 
   return (
     <div className="space-y-6">
@@ -41,7 +39,7 @@ export function HealthQRTab({ user }: { user: any }) {
             {t('yourHealthQR')}
           </h2>
           <p className="text-sm text-muted-foreground">
-            {t('scanAtHospital')}
+            Blockchain-backed Secure Health Identity
           </p>
         </div>
 
@@ -91,16 +89,18 @@ export function HealthQRTab({ user }: { user: any }) {
               <p className="font-medium">{user?.name || '...'}</p>
             </div>
             <div>
-              <p className="text-muted-foreground">{t('id')}</p>
-              <p className="font-medium">{user?._id || '...'}</p>
+              <p className="text-muted-foreground">Blockchain ID</p>
+              <p className="font-medium truncate text-xs" title={user?.blockchainId}>
+                {user?.blockchainId ? `${user.blockchainId.substring(0, 10)}...${user.blockchainId.substring(user.blockchainId.length - 4)}` : '...'}
+              </p>
             </div>
             <div>
               <p className="text-muted-foreground">{t('bloodGroup')}</p>
-              <p className="font-medium text-red-600">B+</p>
+              <p className="font-medium text-red-600">{user?.bloodGroup || '...'}</p>
             </div>
             <div>
               <p className="text-muted-foreground">{t('age')}</p>
-              <p className="font-medium">32 {t('years')}</p>
+              <p className="font-medium">{user?.age || '...'} {t('years')}</p>
             </div>
           </div>
         </div>
