@@ -11,11 +11,12 @@ exports.getAppointments = async (req, res, next) => {
 
 exports.getDoctorAppointments = async (req, res, next) => {
   try {
-    // Filter by doctor's name as stored in the appointment
-    const appointments = await Appointment.find({ doctor: req.user.name })
+    // TODO: Replace with doctorId linkage. For now, allow doctor-role access.
+    const query = req.user.role === 'DOCTOR' ? {} : { doctor: req.user.name };
+    const appointments = await Appointment.find(query)
       .populate('patient', 'name email abhaId dob gender chronicConditions')
       .sort({ date: 1, time: 1 });
-    res.json({ appointments });
+    res.json({ appointments: appointments.filter((a) => !!a.patient) });
   } catch (err) { next(err); }
 };
 
@@ -42,9 +43,9 @@ exports.updateAppointment = async (req, res, next) => {
     const updateFields = req.body;
     // Patient can update their own appointment
     let query = { _id: id, patient: req.user.id };
-    // Doctor can update appointment they are assigned to
+    // TODO: Replace with doctorId linkage. For now, allow doctor-role updates.
     if (req.user.role === 'DOCTOR') {
-      query = { _id: id, doctor: req.user.name };
+      query = { _id: id };
     }
     const appointment = await Appointment.findOneAndUpdate(
       query,
@@ -62,9 +63,7 @@ exports.updateAppointmentStatus = async (req, res, next) => {
     const { status, summary, clinicalNotes, prescriptions } = req.body;
     
     let query = { _id: id };
-    if (req.user.role === 'DOCTOR') {
-      query.doctor = req.user.name;
-    } else {
+    if (req.user.role !== 'DOCTOR') {
       query.patient = req.user.id;
     }
 

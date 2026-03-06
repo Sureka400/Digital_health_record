@@ -74,6 +74,12 @@ export function PatientDashboard({ onLogout, language, user: initialUser }: Pati
     }
   };
 
+  const handleEmergencyCall = (number: string) => {
+    const sanitizedNumber = number.replace(/[^\d+]/g, '');
+    if (!sanitizedNumber) return;
+    window.location.href = `tel:${sanitizedNumber}`;
+  };
+
   const tabs = [
     { id: 'qr', name: t('myHealthQR'), icon: QrCode, color: '#0b6e4f' },
     { id: 'records', name: t('healthRecords'), icon: FileText, color: '#2196F3' },
@@ -107,13 +113,14 @@ export function PatientDashboard({ onLogout, language, user: initialUser }: Pati
               </div>
             </div>
             <div className="flex items-center gap-3">
-              <a
-                href="tel:108"
+              <button
+                type="button"
+                onClick={() => handleEmergencyCall('108')}
                 className="flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 rounded-lg transition-all border border-red-500 shadow-lg shadow-red-900/20"
               >
                 <AlertCircle className="w-5 h-5" />
                 <span className="font-bold">108</span>
-              </a>
+              </button>
               <button
                 onClick={() => setShowScanDialog(true)}
                 className="flex items-center gap-2 px-4 py-2 bg-white/20 hover:bg-white/30 rounded-lg transition-all border border-white/30"

@@ -7,10 +7,17 @@ async function authenticate(req, res, next) {
   const token = auth.split(' ')[1];
   const payload = verifyToken(token);
   if (!payload) return res.status(401).json({ error: 'Invalid token' });
-  // attach user minimal info
-  req.user = { id: payload.id, role: payload.role };
-  // load user optionally for certain operations
+  // load current user for auth-dependent checks (doctor name, email, etc.)
   req.currentUser = await Patient.findById(payload.id).select('-password');
+  if (!req.currentUser) return res.status(401).json({ error: 'User not found' });
+
+  // attach user with identity fields used across controllers
+  req.user = {
+    id: payload.id,
+    role: payload.role,
+    name: req.currentUser.name,
+    email: req.currentUser.email
+  };
   next();
 }
 

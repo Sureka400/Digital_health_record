@@ -69,7 +69,9 @@ export function EmergencyTab() {
 
   const handleSOS = () => {
     const primaryNumber = profile?.emergencyContact?.phone || '108';
-    window.location.href = `tel:${primaryNumber}`;
+    const sanitizedNumber = primaryNumber.replace(/[^\d+]/g, '');
+    if (!sanitizedNumber) return;
+    window.location.href = `tel:${sanitizedNumber}`;
     
     // Optionally send SMS if supported
     if (profile?.emergencyContact?.phone) {
@@ -81,20 +83,23 @@ export function EmergencyTab() {
 
   const handleCall = (number: string) => {
     if (!number || number.trim() === '') {
-      // If no number, try to search for it on Google Maps
-      const query = profile?.name || 'Emergency';
-      window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`, '_blank');
+      // Always keep emergency actions in direct dial flow.
+      window.location.href = 'tel:108';
       return;
     }
-    window.location.href = `tel:${number}`;
+    const sanitizedNumber = number.replace(/[^\d+]/g, '');
+    if (!sanitizedNumber) return;
+    window.location.href = `tel:${sanitizedNumber}`;
   };
 
-  const handleHospitalCall = (hospitalName: string, phone?: string) => {
+  const handleHospitalCall = (_hospitalName: string, phone?: string) => {
     if (phone) {
-      window.location.href = `tel:${phone}`;
+      const sanitizedNumber = phone.replace(/[^\d+]/g, '');
+      if (!sanitizedNumber) return;
+      window.location.href = `tel:${sanitizedNumber}`;
     } else {
-      // If no phone provided, search for the hospital on Google Maps where user can call
-      window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(hospitalName)}`, '_blank');
+      // Keep behavior inside emergency call flow when phone is unavailable.
+      handleCall('108');
     }
   };
 
@@ -162,12 +167,13 @@ export function EmergencyTab() {
         whileTap={{ scale: 0.95 }}
         className="relative"
       >
-        <a 
-          href="tel:108"
+        <button
+          type="button"
+          onClick={() => handleCall('108')}
           className="w-full aspect-square max-w-[200px] mx-auto flex items-center justify-center rounded-full bg-red-600 text-white font-bold text-3xl shadow-[0_0_50px_rgba(220,38,38,0.5)] border-[10px] border-red-100 animate-pulse relative z-10"
         >
           108
-        </a>
+        </button>
         <div className="absolute inset-0 bg-red-600 rounded-full blur-3xl opacity-20 animate-pulse" />
         <p className="text-center mt-4 text-red-600 font-bold animate-bounce uppercase tracking-widest">
           {t('tapToCallEmergency')}

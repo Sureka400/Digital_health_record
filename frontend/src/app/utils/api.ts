@@ -19,7 +19,7 @@ async function request(endpoint: string, options: RequestInit = {}) {
   if (!response.ok) {
     // Try parse json error, otherwise fallback
     const error = await response.json().catch(() => ({ error: 'An error occurred' }));
-    throw new Error(error.error || 'Request failed');
+    throw new Error(error.error || error.message || 'Request failed');
   }
 
   // If response is JSON return parsed JSON
@@ -85,7 +85,7 @@ async function upload(endpoint: string, file: File, body: Record<string, string>
 
   if (!response.ok) {
     const error = await response.json().catch(() => ({ error: 'Upload failed' }));
-    throw new Error(error.error || 'Upload failed');
+    throw new Error(error.error || error.message || 'Upload failed');
   }
 
   return response.json();

@@ -25,8 +25,17 @@ app.use(morgan('dev'));
 // serve uploads
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
-// connect DB
-connectDB();
+async function startServer() {
+  try {
+    await connectDB();
+
+    const PORT = process.env.PORT || 4000;
+    app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+  } catch (err) {
+    console.error('Failed to start server:', err.message);
+    process.exit(1);
+  }
+}
 
 app.use('/api/auth', authRoutes);
 app.use('/api/patients', patientRoutes);
@@ -40,5 +49,4 @@ app.get('/', (req, res) => res.json({ ok: true, service: 'patient-module' }));
 // central error handler
 app.use(errorHandler);
 
-const PORT = process.env.PORT || 4000;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+startServer();
