@@ -133,7 +133,8 @@ exports.getQRCode = async (req, res, next) => {
     // Use FRONTEND_URL from env or try to derive it from Origin header
     const origin = req.get('origin');
     const frontendUrl = process.env.FRONTEND_URL || origin || 'http://localhost:5173';
-    const publicUrl = `${frontendUrl}/public-profile/${user.blockchainId}`;
+    // Use query-string URL so it works even when direct path routing is not configured.
+    const publicUrl = `${frontendUrl}/?publicProfile=${encodeURIComponent(user.blockchainId)}`;
     const qrCodeDataUrl = await QRCode.toDataURL(publicUrl);
     
     res.json({ qrCodeDataUrl, blockchainId: user.blockchainId });

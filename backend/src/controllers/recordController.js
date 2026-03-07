@@ -4,6 +4,7 @@ const Patient = require('../models/Patient');
 const Appointment = require('../models/Appointment');
 const { signToken, verifyToken } = require('../utils/jwt');
 const { OpenAI } = require('openai');
+const { resolveDoctorFromUser } = require('../utils/doctorIdentity');
 
 const openai = new OpenAI({
   apiKey: process.env.AI_API_KEY,
@@ -82,12 +83,15 @@ exports.getPatientRecordsForDoctor = async (req, res, next) => {
   try {
     const { patientId } = req.params;
     const userId = req.user.id;
-    const userName = req.user.name;
+    const doctorIdentity = resolveDoctorFromUser(req.user);
 
     // Check if there is an appointment between this doctor and patient
     const appointment = await Appointment.findOne({
       patient: patientId,
-      doctor: userName
+      $or: [
+        ...(doctorIdentity ? [{ doctorKey: doctorIdentity.key }] : []),
+        { doctor: req.user.name }
+      ]
     });
 
     // Check if there is a consent

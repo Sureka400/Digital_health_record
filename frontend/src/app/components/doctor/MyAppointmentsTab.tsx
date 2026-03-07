@@ -1,51 +1,65 @@
-import React from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { motion } from 'motion/react';
-import { Calendar, Clock, User, Video, CheckCircle } from 'lucide-react';
+import { Calendar, Clock, User, Loader2 } from 'lucide-react';
 import { Card } from '@/app/components/ui/card';
 import { Button } from '@/app/components/ui/button';
 import { Badge } from '@/app/components/ui/badge';
+import { api } from '@/app/utils/api';
+
+type Appointment = {
+  _id: string;
+  date: string;
+  time: string;
+  type: string;
+  status: 'upcoming' | 'completed' | 'cancelled';
+  specialty?: string;
+  patient?: {
+    name?: string;
+    abhaId?: string;
+  };
+};
 
 export function MyAppointmentsTab() {
-  const todayAppointments = [
-    {
-      id: '1',
-      time: '10:00 AM',
-      patient: 'Rajesh Kumar',
-      patientId: 'KL-MW-2025-12345',
-      type: 'Follow-up',
-      mode: 'in-person',
-      status: 'upcoming',
-    },
-    {
-      id: '2',
-      time: '11:30 AM',
-      patient: 'Priya Nair',
-      patientId: 'KL-MW-2025-67890',
-      type: 'New Consultation',
-      mode: 'video',
-      status: 'upcoming',
-    },
-    {
-      id: '3',
-      time: '2:00 PM',
-      patient: 'Mohammed Ali',
-      patientId: 'KL-MW-2025-13579',
-      type: 'Routine Checkup',
-      mode: 'in-person',
-      status: 'upcoming',
-    },
-  ];
+  const [appointments, setAppointments] = useState<Appointment[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
-  const completedToday = 5;
-  const totalToday = todayAppointments.length + completedToday;
+  useEffect(() => {
+    fetchAppointments();
+  }, []);
+
+  const fetchAppointments = async () => {
+    try {
+      setLoading(true);
+      setError('');
+      const res = await api.get('/appointments/doctor');
+      setAppointments(Array.isArray(res?.appointments) ? res.appointments : []);
+    } catch (err: any) {
+      setError(err.message || 'Failed to load appointments');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const todaysDate = new Date().toDateString();
+  const todayAppointments = useMemo(
+    () =>
+      appointments.filter(
+        (a) =>
+          new Date(a.date).toDateString() === todaysDate &&
+          a.status !== 'cancelled'
+      ),
+    [appointments, todaysDate]
+  );
+  const completedToday = todayAppointments.filter((a) => a.status === 'completed').length;
+  const pendingToday = todayAppointments.filter((a) => a.status === 'upcoming').length;
 
   return (
     <div className="space-y-6">
-      {/* Stats */}
       <div className="grid grid-cols-3 gap-3">
         <Card hover>
           <div className="text-center">
-            <p className="text-3xl font-bold text-[#0b6e4f]">{totalToday}</p>
+            <p className="text-3xl font-bold text-[#0b6e4f]">{todayAppointments.length}</p>
             <p className="text-sm text-muted-foreground">Total Today</p>
           </div>
         </Card>
@@ -57,78 +71,78 @@ export function MyAppointmentsTab() {
         </Card>
         <Card hover>
           <div className="text-center">
-            <p className="text-3xl font-bold text-orange-600">{todayAppointments.length}</p>
+            <p className="text-3xl font-bold text-orange-600">{pendingToday}</p>
             <p className="text-sm text-muted-foreground">Pending</p>
           </div>
         </Card>
       </div>
 
-      {/* Today's Schedule */}
       <Card>
         <h2 className="text-xl font-bold text-foreground mb-4 flex items-center gap-2">
           <Calendar className="w-5 h-5" />
-          Today's Schedule
+          My Appointments
         </h2>
-        
-        <div className="space-y-3">
-          {todayAppointments.map((appointment, index) => (
-            <motion.div
-              key={appointment.id}
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: index * 0.1 }}
-              className="p-4 bg-accent rounded-lg hover:bg-[#e8f5e9] transition-all"
-            >
-              <div className="flex items-start justify-between mb-3">
-                <div className="flex items-center gap-3">
-                  <div className="p-3 bg-[#0b6e4f] text-white rounded-xl">
-                    <Clock className="w-5 h-5" />
+
+        {loading ? (
+          <div className="py-8 text-center text-muted-foreground flex items-center justify-center gap-2">
+            <Loader2 className="w-4 h-4 animate-spin" />
+            Loading appointments...
+          </div>
+        ) : error ? (
+          <div className="py-8 text-center">
+            <p className="text-sm text-red-500 mb-3">{error}</p>
+            <Button variant="outline" onClick={fetchAppointments}>
+              Retry
+            </Button>
+          </div>
+        ) : appointments.length === 0 ? (
+          <p className="py-8 text-center text-muted-foreground">No appointments assigned yet.</p>
+        ) : (
+          <div className="space-y-3">
+            {appointments.map((appointment, index) => (
+              <motion.div
+                key={appointment._id}
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: index * 0.05 }}
+                className="p-4 bg-accent rounded-lg hover:bg-[#e8f5e9] transition-all"
+              >
+                <div className="flex items-start justify-between mb-3">
+                  <div className="flex items-center gap-3">
+                    <div className="p-3 bg-[#0b6e4f] text-white rounded-xl">
+                      <Clock className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <p className="font-semibold text-lg text-foreground">{appointment.time}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {new Date(appointment.date).toLocaleDateString('en-IN')} | {appointment.specialty || 'General'}
+                      </p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="font-semibold text-lg text-foreground">{appointment.time}</p>
-                    <p className="text-sm text-muted-foreground">{appointment.type}</p>
-                  </div>
-                </div>
-                {appointment.mode === 'video' && (
-                  <Badge variant="info">
-                    <Video className="w-3 h-3" />
-                    Video Call
+                  <Badge
+                    variant={
+                      appointment.status === 'completed'
+                        ? 'success'
+                        : appointment.status === 'cancelled'
+                        ? 'danger'
+                        : 'info'
+                    }
+                  >
+                    {appointment.status}
                   </Badge>
-                )}
-              </div>
-
-              <div className="flex items-center gap-2 mb-3">
-                <User className="w-4 h-4 text-muted-foreground" />
-                <div>
-                  <p className="font-medium text-foreground">{appointment.patient}</p>
-                  <p className="text-xs text-muted-foreground">{appointment.patientId}</p>
                 </div>
-              </div>
 
-              <div className="flex gap-2">
-                <Button variant="primary" size="sm">
-                  {appointment.mode === 'video' ? 'Start Video Call' : 'Start Consultation'}
-                </Button>
-                <Button variant="outline" size="sm">
-                  View Records
-                </Button>
-              </div>
-            </motion.div>
-          ))}
-        </div>
-      </Card>
-
-      {/* Quick Actions */}
-      <Card className="bg-gradient-to-r from-[#e8f5e9] to-[#e3f2fd]">
-        <h3 className="font-semibold text-foreground mb-3">Quick Actions</h3>
-        <div className="grid grid-cols-2 gap-2">
-          <Button variant="outline" fullWidth>
-            Add Walk-in
-          </Button>
-          <Button variant="outline" fullWidth>
-            View Calendar
-          </Button>
-        </div>
+                <div className="flex items-center gap-2">
+                  <User className="w-4 h-4 text-muted-foreground" />
+                  <div>
+                    <p className="font-medium text-foreground">{appointment.patient?.name || 'Unknown Patient'}</p>
+                    <p className="text-xs text-muted-foreground">{appointment.patient?.abhaId || 'No ABHA ID'}</p>
+                  </div>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        )}
       </Card>
     </div>
   );

@@ -11,6 +11,11 @@ const AppointmentSchema = new mongoose.Schema({
     type: String, // In a real app, this would be a ref to a Doctor model
     required: true
   },
+  doctorKey: {
+    type: String,
+    enum: ['sureka', 'soniya'],
+    index: true
+  },
   specialty: {
     type: String,
     required: true

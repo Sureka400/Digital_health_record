@@ -22,9 +22,17 @@ export default function App() {
   const [publicBlockchainId, setPublicBlockchainId] = useState<string | null>(null);
 
   useEffect(() => {
-    // Check for QR token in URL
+    // Check for QR/public profile in URL (path or query string)
     const path = window.location.pathname;
-    if (path.startsWith('/qr/')) {
+    const params = new URLSearchParams(window.location.search);
+    const queryQrToken = params.get('qr');
+    const queryPublicBlockchainId = params.get('publicProfile');
+
+    if (queryQrToken) {
+      setQrToken(queryQrToken);
+    } else if (queryPublicBlockchainId) {
+      setPublicBlockchainId(queryPublicBlockchainId);
+    } else if (path.startsWith('/qr/')) {
       const token = path.split('/qr/')[1];
       if (token) {
         setQrToken(token);

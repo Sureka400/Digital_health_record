@@ -142,14 +142,20 @@ exports.sendOTP = async (req, res, next) => {
     if (!errors.isEmpty()) return res.status(400).json({ errors: errors.array() });
 
     const { email, role } = req.body;
+    const normalizedEmail = String(email || '').toLowerCase();
+    const allowedDoctorEmails = [
+      'soniyav.aids2024@citchennai.net',
+      'surekar.aids2024@citchennai.net',
+      'sureka.aids2024@citchennai.net'
+    ];
 
     // Role-based email validation
     if (role === 'DOCTOR') {
-      if (email !== 'soniyav.aids2024@citchennai.net') {
+      if (!allowedDoctorEmails.includes(normalizedEmail)) {
         return res.status(403).json({ error: 'Access Denied: Unauthorized email for Doctor role' });
       }
     } else if (role === 'ADMIN') {
-      if (email !== 'surekar.aids2024@citchennai.net') {
+      if (normalizedEmail !== 'surekar.aids2024@citchennai.net') {
         return res.status(403).json({ error: 'Access Denied: Unauthorized email for Admin role' });
       }
     }

@@ -1,4 +1,5 @@
 const Appointment = require('../models/Appointment');
+const { resolveDoctorByInput, resolveDoctorFromUser } = require('../utils/doctorIdentity');
 
 exports.getAppointments = async (req, res, next) => {
   try {
@@ -11,8 +12,22 @@ exports.getAppointments = async (req, res, next) => {
 
 exports.getDoctorAppointments = async (req, res, next) => {
   try {
-    // TODO: Replace with doctorId linkage. For now, allow doctor-role access.
-    const query = req.user.role === 'DOCTOR' ? {} : { doctor: req.user.name };
+    if (req.user.role !== 'DOCTOR') {
+      return res.status(403).json({ error: 'Only doctors can access doctor appointments' });
+    }
+
+    const doctorIdentity = resolveDoctorFromUser(req.user);
+    if (!doctorIdentity) {
+      return res.status(403).json({ error: 'Doctor profile is not in allowed appointment list' });
+    }
+
+    const query = {
+      $or: [
+        { doctorKey: doctorIdentity.key },
+        { doctor: doctorIdentity.displayName },
+        { doctor: req.user.name }
+      ]
+    };
     const appointments = await Appointment.find(query)
       .populate('patient', 'name email abhaId dob gender chronicConditions')
       .sort({ date: 1, time: 1 });
@@ -23,9 +38,15 @@ exports.getDoctorAppointments = async (req, res, next) => {
 exports.createAppointment = async (req, res, next) => {
   try {
     const { doctor, specialty, hospital, date, time, type } = req.body;
+    const selectedDoctor = resolveDoctorByInput(doctor);
+    if (!selectedDoctor) {
+      return res.status(400).json({ error: 'Please select either Dr. Sureka or Dr. Soniya' });
+    }
+
     const appointment = new Appointment({
       patient: req.user.id,
-      doctor,
+      doctor: selectedDoctor.displayName,
+      doctorKey: selectedDoctor.key,
       specialty,
       hospital,
       date,
@@ -43,10 +64,26 @@ exports.updateAppointment = async (req, res, next) => {
     const updateFields = req.body;
     // Patient can update their own appointment
     let query = { _id: id, patient: req.user.id };
-    // TODO: Replace with doctorId linkage. For now, allow doctor-role updates.
+
+    // Doctor can only update their own assigned appointments.
     if (req.user.role === 'DOCTOR') {
-      query = { _id: id };
+      const doctorIdentity = resolveDoctorFromUser(req.user);
+      if (!doctorIdentity) {
+        return res.status(403).json({ error: 'Doctor profile is not in allowed appointment list' });
+      }
+      query = {
+        _id: id,
+        $or: [
+          { doctorKey: doctorIdentity.key },
+          { doctor: doctorIdentity.displayName },
+          { doctor: req.user.name }
+        ]
+      };
     }
+
+    delete updateFields.doctor;
+    delete updateFields.doctorKey;
+
     const appointment = await Appointment.findOneAndUpdate(
       query,
       updateFields,
@@ -65,6 +102,16 @@ exports.updateAppointmentStatus = async (req, res, next) => {
     let query = { _id: id };
     if (req.user.role !== 'DOCTOR') {
       query.patient = req.user.id;
+    } else {
+      const doctorIdentity = resolveDoctorFromUser(req.user);
+      if (!doctorIdentity) {
+        return res.status(403).json({ error: 'Doctor profile is not in allowed appointment list' });
+      }
+      query.$or = [
+        { doctorKey: doctorIdentity.key },
+        { doctor: doctorIdentity.displayName },
+        { doctor: req.user.name }
+      ];
     }
 
     const update = { status, summary };

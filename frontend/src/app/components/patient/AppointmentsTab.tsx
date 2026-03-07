@@ -38,6 +38,7 @@ interface Appointment {
 }
 
 export function AppointmentsTab() {
+  const allowedDoctors = ['Dr. Sureka', 'Dr. Soniya'];
   const { language } = useLanguage();
   const { t } = useTranslation(language);
   const [appointments, setAppointments] = useState<Appointment[]>([]);
@@ -51,7 +52,7 @@ export function AppointmentsTab() {
 
   // Form State
   const [formData, setFormData] = useState({
-    doctor: '',
+    doctor: 'Dr. Sureka',
     specialty: '',
     hospital: '',
     date: '',
@@ -83,7 +84,7 @@ export function AppointmentsTab() {
       setAppointments([...appointments, response.appointment]);
       setShowBookDialog(false);
       setFormData({
-        doctor: '',
+        doctor: 'Dr. Sureka',
         specialty: '',
         hospital: '',
         date: '',
@@ -314,13 +315,21 @@ export function AppointmentsTab() {
             <div className="grid gap-4 py-4">
               <div className="grid gap-2">
                 <Label htmlFor="doctor">{t('doctorName')}</Label>
-                <Input
-                  id="doctor"
+                <Select
                   value={formData.doctor}
-                  onChange={(e) => setFormData({ ...formData, doctor: e.target.value })}
-                  placeholder="e.g. Dr. Priya Menon"
-                  required
-                />
+                  onValueChange={(value) => setFormData({ ...formData, doctor: value })}
+                >
+                  <SelectTrigger id="doctor">
+                    <SelectValue placeholder="Select doctor" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {allowedDoctors.map((doctorName) => (
+                      <SelectItem key={doctorName} value={doctorName}>
+                        {doctorName}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
               <div className="grid gap-2">
                 <Label htmlFor="specialty">{t('specialty')}</Label>

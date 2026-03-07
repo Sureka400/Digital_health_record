@@ -30,6 +30,9 @@ export function HealthQRTab({ user }: { user: any }) {
 
   const qrUrl = qrData?.qrCodeDataUrl;
   const blockchainId = qrData?.blockchainId || user?.blockchainId;
+  const shareUrl = blockchainId
+    ? `${window.location.origin}/?publicProfile=${encodeURIComponent(blockchainId)}`
+    : '';
 
   const handleDownload = () => {
     if (!qrUrl) return;
@@ -42,21 +45,8 @@ export function HealthQRTab({ user }: { user: any }) {
   };
 
   const handleShare = async () => {
-    const shareUrl = `${window.location.origin}/public-profile/${blockchainId}`;
-    if (navigator.share) {
-      try {
-        await navigator.share({
-          title: t('yourHealthQR'),
-          text: `Check out my secure health identity on Kerala Digital Health Portal`,
-          url: shareUrl,
-        });
-      } catch (err) {
-        console.error('Error sharing:', err);
-      }
-    } else {
-      await navigator.clipboard.writeText(shareUrl);
-      alert('Link copied to clipboard');
-    }
+    if (!shareUrl) return;
+    window.prompt('Copy this link:', shareUrl);
   };
 
   return (
@@ -148,7 +138,7 @@ export function HealthQRTab({ user }: { user: any }) {
             variant="outline" 
             icon={<Share2 className="w-4 h-4" />}
             onClick={handleShare}
-            disabled={!blockchainId}
+            disabled={!shareUrl}
           >
             {t('share')}
           </Button>
