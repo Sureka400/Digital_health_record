@@ -1,9 +1,11 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { motion } from 'motion/react';
-import { QrCode, Camera, AlertTriangle, Heart, Activity } from 'lucide-react';
+import { Camera, AlertTriangle, Heart, Activity, Loader2 } from 'lucide-react';
 import { Card } from '@/app/components/ui/card';
 import { Button } from '@/app/components/ui/button';
 import { Badge } from '@/app/components/ui/badge';
+import { Input } from '@/app/components/ui/input';
+import { api } from '@/app/utils/api';
 
 interface ScanQRTabProps {
   onNavigate?: (tabId: string) => void;
@@ -13,28 +15,203 @@ interface ScanQRTabProps {
 
 export function ScanQRTab({ onNavigate, onPatientSelected, selectedPatient }: ScanQRTabProps) {
   const [isScanning, setIsScanning] = useState(false);
+  const [isResolving, setIsResolving] = useState(false);
+  const [scanError, setScanError] = useState<string | null>(null);
+  const [manualInput, setManualInput] = useState('');
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+  const detectorRef = useRef<any>(null);
+  const scanFrameRef = useRef<number | null>(null);
+  const processingRef = useRef(false);
 
-  const handleScan = () => {
-    setIsScanning(true);
-    // Simulate scanning
-    setTimeout(() => {
-      const patient = {
-        id: 'KL-MW-2025-12345',
-        name: 'Rajesh Kumar',
-        age: 32,
-        gender: 'Male',
-        bloodGroup: 'B+',
-        photo: null,
-        allergies: ['Penicillin'],
-        chronicConditions: ['Type 2 Diabetes'],
-        lastVisit: '2025-01-28',
-        emergencyContact: '+91 98765 43210',
-      };
-      if (onPatientSelected) {
-        onPatientSelected(patient);
+  const stopScanning = () => {
+    if (scanFrameRef.current) {
+      cancelAnimationFrame(scanFrameRef.current);
+      scanFrameRef.current = null;
+    }
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach((track) => track.stop());
+      streamRef.current = null;
+    }
+    setIsScanning(false);
+  };
+
+  useEffect(() => {
+    return () => stopScanning();
+  }, []);
+
+  const normalizeShortId = (value: string) => value.trim().replace(/\u2026/g, '...').replace(/^ID:\s*/i, '');
+
+  const parseScannedValue = (rawValue: string) => {
+    const cleaned = normalizeShortId(rawValue);
+    try {
+      const parsedUrl = new URL(cleaned);
+      const publicProfile = parsedUrl.searchParams.get('publicProfile');
+      if (publicProfile) {
+        return { type: 'publicProfile' as const, value: decodeURIComponent(publicProfile) };
       }
-      setIsScanning(false);
-    }, 2000);
+
+      const qrToken = parsedUrl.searchParams.get('qr') || parsedUrl.searchParams.get('qrId');
+      if (qrToken) {
+        return { type: 'qrToken' as const, value: qrToken };
+      }
+
+      const pathMatch = parsedUrl.pathname.match(/\/qr\/([^/?#]+)/i);
+      if (pathMatch?.[1]) {
+        return { type: 'qrToken' as const, value: pathMatch[1] };
+      }
+    } catch {
+      // not a URL, continue with direct parsing
+    }
+
+    if (/^0x[a-fA-F0-9.]+$/.test(cleaned)) {
+      return { type: 'publicProfile' as const, value: cleaned };
+    }
+
+    return { type: 'qrToken' as const, value: cleaned };
+  };
+
+  const setPatientFromPublicProfile = async (identifier: string) => {
+    const response = await api.get(`/patients/public-profile/${encodeURIComponent(identifier)}`);
+    const patient = response?.patient;
+    if (!patient) throw new Error('Patient not found');
+
+    onPatientSelected?.({
+      _id: patient._id,
+      id: patient._id || patient.blockchainId,
+      blockchainId: patient.blockchainId,
+      name: patient.name || 'Unknown Patient',
+      age: patient.age,
+      gender: patient.gender,
+      bloodGroup: patient.bloodGroup,
+      allergies: patient.allergies || [],
+      chronicConditions: patient.chronicConditions || [],
+      emergencyContact: patient.emergencyContact?.phone || patient.emergencyContact || '',
+      lastVisit: response?.appointments?.[0]?.date || null,
+    });
+  };
+
+  const setPatientFromQrToken = async (token: string) => {
+    const response = await api.get(`/records/qr/${encodeURIComponent(token)}`);
+    if (!response) throw new Error('Invalid QR data');
+
+    if (response.type === 'patient' && response.patient) {
+      const patient = response.patient;
+      onPatientSelected?.({
+        _id: patient._id,
+        id: patient._id || patient.abhaId,
+        name: patient.name || 'Unknown Patient',
+        abhaId: patient.abhaId,
+        blockchainId: patient.blockchainId,
+        age: patient.age,
+        gender: patient.gender,
+        bloodGroup: patient.bloodGroup,
+        allergies: patient.allergies || [],
+        chronicConditions: patient.chronicConditions || [],
+      });
+      return;
+    }
+
+    if (response.type === 'single' && response.record) {
+      const record = response.record;
+      onPatientSelected?.({
+        _id: record.patient,
+        id: record.patient,
+        name: 'Scanned Patient',
+        allergies: [],
+        chronicConditions: [],
+        lastVisit: record.createdAt,
+      });
+      return;
+    }
+
+    throw new Error('Unsupported QR payload');
+  };
+
+  const resolveQrOrId = async (value: string) => {
+    const parsed = parseScannedValue(value);
+    if (!parsed.value) {
+      throw new Error('Empty QR value');
+    }
+
+    if (parsed.type === 'publicProfile') {
+      await setPatientFromPublicProfile(parsed.value);
+      return;
+    }
+
+    await setPatientFromQrToken(parsed.value);
+  };
+
+  const resolveAndSelect = async (value: string) => {
+    if (processingRef.current) return;
+    processingRef.current = true;
+    setIsResolving(true);
+    setScanError(null);
+    try {
+      await resolveQrOrId(value);
+      stopScanning();
+    } catch (err: any) {
+      setScanError(err?.message || 'Failed to read patient from QR');
+    } finally {
+      setIsResolving(false);
+      processingRef.current = false;
+    }
+  };
+
+  const handleScan = async () => {
+    setScanError(null);
+
+    if (!(window as any).BarcodeDetector) {
+      setScanError('Camera QR scan is not supported in this browser. Paste QR link/token below.');
+      return;
+    }
+
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: { ideal: 'environment' } },
+        audio: false,
+      });
+      streamRef.current = stream;
+      setIsScanning(true);
+
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+        await videoRef.current.play();
+      }
+
+      detectorRef.current = new (window as any).BarcodeDetector({ formats: ['qr_code'] });
+
+      const scanFrame = async () => {
+        if (!videoRef.current || !detectorRef.current || processingRef.current) {
+          scanFrameRef.current = requestAnimationFrame(scanFrame);
+          return;
+        }
+
+        try {
+          const barcodes = await detectorRef.current.detect(videoRef.current);
+          if (barcodes && barcodes.length > 0) {
+            const rawValue = barcodes[0]?.rawValue;
+            if (rawValue) {
+              await resolveAndSelect(rawValue);
+              return;
+            }
+          }
+        } catch {
+          // keep scanning
+        }
+
+        scanFrameRef.current = requestAnimationFrame(scanFrame);
+      };
+
+      scanFrameRef.current = requestAnimationFrame(scanFrame);
+    } catch (err: any) {
+      stopScanning();
+      setScanError(err?.message || 'Unable to access camera');
+    }
+  };
+
+  const handleManualResolve = async () => {
+    await resolveAndSelect(manualInput);
   };
 
   return (
@@ -64,30 +241,56 @@ export function ScanQRTab({ onNavigate, onPatientSelected, selectedPatient }: Sc
               transition={{ duration: 1.5, repeat: isScanning ? Infinity : 0 }}
             >
               {isScanning ? (
-                <motion.div
-                  animate={{ rotate: 360 }}
-                  transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}
-                >
-                  <QrCode className="w-24 h-24 text-[#0b6e4f]" />
-                </motion.div>
+                <video
+                  ref={videoRef}
+                  className="w-full h-full object-cover rounded-xl"
+                  muted
+                  playsInline
+                />
               ) : (
                 <Camera className="w-24 h-24 text-muted-foreground" />
               )}
             </motion.div>
 
-            <Button
-              variant="primary"
-              size="lg"
-              onClick={handleScan}
-              disabled={isScanning}
-              icon={<Camera className="w-5 h-5" />}
-            >
-              {isScanning ? 'Scanning...' : 'Open Camera to Scan'}
-            </Button>
+            <div className="flex gap-2 justify-center">
+              <Button
+                variant="primary"
+                size="lg"
+                onClick={handleScan}
+                disabled={isScanning || isResolving}
+                icon={isResolving ? <Loader2 className="w-5 h-5 animate-spin" /> : <Camera className="w-5 h-5" />}
+              >
+                {isScanning ? 'Scanning...' : 'Open Camera to Scan'}
+              </Button>
+              {isScanning && (
+                <Button variant="outline" size="lg" onClick={stopScanning}>
+                  Stop
+                </Button>
+              )}
+            </div>
 
-            <p className="text-xs text-muted-foreground">
-              Or enter patient ID manually
-            </p>
+            <div className="space-y-2 max-w-lg mx-auto">
+              <p className="text-xs text-muted-foreground">Or paste QR link / token / blockchain ID</p>
+              <div className="flex gap-2">
+                <Input
+                  type="text"
+                  placeholder="Paste QR value"
+                  value={manualInput}
+                  onChange={(e) => setManualInput(e.target.value)}
+                />
+                <Button
+                  variant="outline"
+                  onClick={handleManualResolve}
+                  disabled={!manualInput.trim() || isResolving}
+                >
+                  {isResolving ? 'Reading...' : 'Use'}
+                </Button>
+              </div>
+            </div>
+
+            {scanError && (
+              <p className="text-sm text-red-500">{scanError}</p>
+            )}
           </div>
         ) : (
           <motion.div
@@ -114,7 +317,7 @@ export function ScanQRTab({ onNavigate, onPatientSelected, selectedPatient }: Sc
           <Card>
             <div className="flex items-start gap-4">
               <div className="w-20 h-20 bg-gradient-to-br from-[#0b6e4f] to-[#2196F3] rounded-xl flex items-center justify-center text-white text-3xl font-bold">
-                {selectedPatient.name.charAt(0)}
+                {(selectedPatient.name || 'P').charAt(0)}
               </div>
               <div className="flex-1">
                 <h3 className="text-2xl font-bold text-foreground mb-1">{selectedPatient.name}</h3>

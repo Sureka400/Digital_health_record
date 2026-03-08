@@ -5,11 +5,53 @@ const Appointment = require('../models/Appointment');
 const { signToken, verifyToken } = require('../utils/jwt');
 const { OpenAI } = require('openai');
 const { resolveDoctorFromUser } = require('../utils/doctorIdentity');
+const mongoose = require('mongoose');
 
 const openai = new OpenAI({
   apiKey: process.env.AI_API_KEY,
   baseURL: process.env.AI_BASE_URL || 'https://api.groq.com/openai/v1',
 });
+
+function escapeRegex(value = '') {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+async function resolvePatientByIdentifier(rawIdentifier) {
+  const identifier = String(rawIdentifier || '')
+    .trim()
+    .replace(/^id:\s*/i, '')
+    .replace(/…/g, '...');
+  if (!identifier) return null;
+
+  if (mongoose.Types.ObjectId.isValid(identifier)) {
+    const byId = await Patient.findById(identifier).select('_id name blockchainId abhaId email');
+    if (byId) return byId;
+  }
+
+  if (identifier.includes('...')) {
+    const [prefix, suffix] = identifier.split('...').map((part) => part.trim());
+    if (prefix && suffix) {
+      const fuzzyBlockchainRegex = new RegExp(`^${escapeRegex(prefix)}[a-fA-F0-9]*${escapeRegex(suffix)}$`, 'i');
+      const byShortBlockchain = await Patient.findOne({ blockchainId: fuzzyBlockchainRegex }).select('_id name blockchainId abhaId email');
+      if (byShortBlockchain) return byShortBlockchain;
+    }
+  }
+
+  if (/^0x[a-fA-F0-9]+$/.test(identifier)) {
+    const byBlockchain = await Patient.findOne({ blockchainId: new RegExp(`^${escapeRegex(identifier)}$`, 'i') }).select('_id name blockchainId abhaId email');
+    if (byBlockchain) return byBlockchain;
+  }
+
+  if (identifier.includes('@')) {
+    const byEmail = await Patient.findOne({ email: new RegExp(`^${escapeRegex(identifier)}$`, 'i') }).select('_id name blockchainId abhaId email');
+    if (byEmail) return byEmail;
+  }
+
+  const byAbha = await Patient.findOne({ abhaId: identifier }).select('_id name blockchainId abhaId email');
+  if (byAbha) return byAbha;
+
+  return null;
+}
 
 // Get all records for the logged-in patient (their own or shared with them)
 exports.getRecords = async (req, res, next) => {
@@ -81,9 +123,15 @@ exports.getRecords = async (req, res, next) => {
 // Get records of a specific patient for a doctor (if authorized)
 exports.getPatientRecordsForDoctor = async (req, res, next) => {
   try {
-    const { patientId } = req.params;
+    const { patientId: patientIdentifier } = req.params;
     const userId = req.user.id;
     const doctorIdentity = resolveDoctorFromUser(req.user);
+    const patient = await resolvePatientByIdentifier(patientIdentifier);
+
+    if (!patient) {
+      return res.status(404).json({ error: 'Patient not found for provided identifier' });
+    }
+    const patientId = patient._id;
 
     // Check if there is an appointment between this doctor and patient
     const appointment = await Appointment.findOne({
@@ -190,17 +238,26 @@ exports.createRecord = async (req, res, next) => {
     }
     
     // Patients can only create for themselves; doctors can create for any patient
-    let patientId = req.body.patientId || userId;
-    if (userRole === 'PATIENT' && patientId !== userId) {
+    const patientIdentifier = req.body.patientId || userId;
+    if (userRole === 'PATIENT' && patientIdentifier !== userId) {
       return res.status(403).json({ error: 'Patients can only create records for themselves' });
     }
+
+    let resolvedPatient;
+    if (userRole === 'PATIENT') {
+      resolvedPatient = await Patient.findById(userId).select('_id');
+    } else {
+      resolvedPatient = await resolvePatientByIdentifier(patientIdentifier);
+    }
     
-    // Verify patient exists
-    const patientExists = await Patient.exists({ _id: patientId });
-    if (!patientExists) return res.status(404).json({ error: 'Patient not found' });
+    if (!resolvedPatient) {
+      return res.status(404).json({
+        error: 'Patient not found. Use Mongo patient ID, blockchain ID (0x...), ABHA ID, or email.',
+      });
+    }
 
     const payload = { 
-      patient: patientId, 
+      patient: resolvedPatient._id,
       title: req.body.title || 'Untitled', 
       description: req.body.description || '', 
       category: req.body.category || '',

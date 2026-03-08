@@ -16,9 +16,31 @@ interface LoginScreenProps {
 function normalizeSpokenEmail(value: string) {
   return value
     .toLowerCase()
+    .replace(/\bat the rate\b/g, '@')
+    .replace(/\bunderscore\b/g, '_')
+    .replace(/\bdash\b/g, '-')
+    .replace(/\bhyphen\b/g, '-')
+    .replace(/\bplus\b/g, '+')
     .replace(/\bat\b/g, '@')
     .replace(/\bdot\b/g, '.')
     .replace(/\s+/g, '');
+}
+
+function extractEmailFromSpeech(value: string) {
+  const lower = value.toLowerCase().trim();
+  const spokenEmailMatch = lower.match(/[a-z0-9._%+\-\s]+(?:at the rate|at)[a-z0-9.\-\s]+(?:dot)[a-z.\s]+/i);
+  if (spokenEmailMatch?.[0]) {
+    return normalizeSpokenEmail(spokenEmailMatch[0]);
+  }
+
+  const commandPrefixMatch = lower.match(
+    /(?:email(?:\s+for\s+login)?|login\s+email|my\s+email(?:\s+is)?|email\s+address(?:\s+is)?)\s+(.+)/
+  );
+  if (commandPrefixMatch?.[1]) {
+    return normalizeSpokenEmail(commandPrefixMatch[1]);
+  }
+
+  return normalizeSpokenEmail(lower);
 }
 
 export function LoginScreen({ onLogin, language }: LoginScreenProps) {
@@ -39,7 +61,7 @@ export function LoginScreen({ onLogin, language }: LoginScreenProps) {
       return;
     }
 
-    const spokenEmail = normalizeSpokenEmail(result);
+    const spokenEmail = extractEmailFromSpeech(result);
     if (spokenEmail) setEmail(spokenEmail);
   }, language);
 

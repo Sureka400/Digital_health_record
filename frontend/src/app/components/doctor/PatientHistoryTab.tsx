@@ -17,7 +17,22 @@ import { api } from '@/app/utils/api';
 import { useTranslation } from '@/app/utils/translations';
 import { useLanguage } from '@/app/context/LanguageContext';
 
-export function PatientHistoryTab() {
+interface PatientHistoryTabProps {
+  patient?: any;
+}
+
+function resolvePatientIdentifier(patient: any): string {
+  if (!patient) return '';
+  return String(
+    patient._id ||
+    patient.patientId ||
+    patient.blockchainId ||
+    patient.id ||
+    ''
+  ).trim();
+}
+
+export function PatientHistoryTab({ patient }: PatientHistoryTabProps) {
   const { language } = useLanguage();
   const { t } = useTranslation(language);
   const [searchQuery, setSearchQuery] = useState('');
@@ -26,15 +41,20 @@ export function PatientHistoryTab() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedRecord, setSelectedRecord] = useState<any | null>(null);
+  const patientIdentifier = resolvePatientIdentifier(patient);
 
   useEffect(() => {
     fetchRecords();
-  }, []);
+  }, [patientIdentifier]);
 
   const fetchRecords = async () => {
     setLoading(true);
+    setError(null);
     try {
-      const response = await api.get('/records');
+      const endpoint = patientIdentifier
+        ? `/records/patient/${encodeURIComponent(patientIdentifier)}`
+        : '/records';
+      const response = await api.get(endpoint);
       setRecords(response.records);
     } catch (err: any) {
       setError(err.message || 'Failed to fetch records');
@@ -71,10 +91,14 @@ export function PatientHistoryTab() {
       <Card>
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h2 className="text-2xl font-bold text-foreground">Patient: Rajesh Kumar</h2>
-            <p className="text-sm text-muted-foreground">ID: KL-MW-2025-12345</p>
+            <h2 className="text-2xl font-bold text-foreground">
+              Patient: {patient?.name || 'Selected Patient'}
+            </h2>
+            <p className="text-sm text-muted-foreground">ID: {patientIdentifier || '-'}</p>
           </div>
-          <Badge variant="success">Active</Badge>
+          <Badge variant={patientIdentifier ? 'success' : 'warning'}>
+            {patientIdentifier ? 'Active' : 'Select patient from scan tab'}
+          </Badge>
         </div>
 
         {/* Search & Filter */}

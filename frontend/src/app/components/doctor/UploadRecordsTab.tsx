@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { motion } from 'motion/react';
 import { Upload, FileText, Camera, Sparkles, Check } from 'lucide-react';
 import { Card } from '@/app/components/ui/card';
@@ -9,11 +9,26 @@ import { api } from '@/app/utils/api';
 import { useTranslation } from '@/app/utils/translations';
 import { useLanguage } from '@/app/context/LanguageContext';
 
-export function UploadRecordsTab() {
+interface UploadRecordsTabProps {
+  patient?: any;
+}
+
+function resolvePatientIdentifier(patient: any): string {
+  if (!patient) return '';
+  return String(
+    patient._id ||
+    patient.patientId ||
+    patient.blockchainId ||
+    patient.id ||
+    ''
+  ).trim();
+}
+
+export function UploadRecordsTab({ patient }: UploadRecordsTabProps) {
   const { language } = useLanguage();
   const { t } = useTranslation(language);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [patientId, setPatientId] = useState('6981fe42f8fab946afe86511');
+  const [patientId, setPatientId] = useState('');
   const [recordType, setRecordType] = useState('prescription');
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -22,6 +37,13 @@ export function UploadRecordsTab() {
   const [uploading, setUploading] = useState(false);
   const [uploaded, setUploaded] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const nextIdentifier = resolvePatientIdentifier(patient);
+    if (nextIdentifier) {
+      setPatientId(nextIdentifier);
+    }
+  }, [patient]);
 
   const recordTypes = [
     { id: 'prescription', name: 'Prescription', icon: '💊' },
@@ -39,6 +61,12 @@ export function UploadRecordsTab() {
 
   const handleUpload = async () => {
     if (!selectedFile) return;
+    const trimmedPatientId = patientId.trim();
+    if (!trimmedPatientId) {
+      setError('Please enter a patient identifier before upload');
+      return;
+    }
+
     setUploading(true);
     setError(null);
     try {
@@ -48,7 +76,7 @@ export function UploadRecordsTab() {
         description,
         hospital,
         doctor,
-        patientId,
+        patientId: trimmedPatientId,
       });
       setUploaded(true);
       setTimeout(() => {
@@ -81,7 +109,7 @@ export function UploadRecordsTab() {
         <h3 className="font-semibold text-foreground mb-3">{t('Select Patient')}</h3>
         <Input
           type="text"
-          placeholder={t("Enter Patient ID or scan QR code")}
+          placeholder={t("Enter Patient ID, blockchain ID, ABHA ID, or email")}
           icon={<FileText className="w-5 h-5" />}
           value={patientId}
           onChange={(e) => setPatientId(e.target.value)}
@@ -90,11 +118,13 @@ export function UploadRecordsTab() {
           <div className="flex items-center justify-between">
             <div>
               <p className="font-semibold text-foreground">
-                {patientId === '6981fe42f8fab946afe86511' ? 'John Doe' : t('Unknown Patient')}
+                {patient?.name || t('Unknown Patient')}
               </p>
-              <p className="text-sm text-muted-foreground">{t('id')}: {patientId}</p>
+              <p className="text-sm text-muted-foreground">{t('id')}: {patientId || '-'}</p>
             </div>
-            <Badge variant="success">{t('Selected')}</Badge>
+            <Badge variant={patientId.trim() ? 'success' : 'warning'}>
+              {patientId.trim() ? t('Selected') : t('Required')}
+            </Badge>
           </div>
         </div>
       </Card>
@@ -227,7 +257,7 @@ export function UploadRecordsTab() {
                   />
                   
                   {error && (
-                    <p className="text-sm text-red-500">{t(error)}</p>
+                    <p className="text-sm text-red-500">{error}</p>
                   )}
 
                   <Button

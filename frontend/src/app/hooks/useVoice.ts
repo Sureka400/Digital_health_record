@@ -5,7 +5,7 @@ export function useVoice(onResult: (result: string) => void, language: string = 
   const [error, setError] = useState<string | null>(null);
   const recognitionRef = useRef<any>(null);
 
-  const startListening = useCallback(async () => {
+  const startListening = useCallback(() => {
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
 
     if (!SpeechRecognition) {
@@ -17,21 +17,13 @@ export function useVoice(onResult: (result: string) => void, language: string = 
       return;
     }
 
-    // Trigger browser permission prompt on user tap.
-    if (navigator.mediaDevices?.getUserMedia) {
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        stream.getTracks().forEach((track) => track.stop());
-      } catch (err: any) {
-        const code = err?.name || err?.message || 'not-allowed';
-        const host = window.location.hostname || 'localhost';
-        setError(
-          code === 'NotAllowedError'
-            ? `Please allow microphone access for ${host} in your browser site settings.`
-            : code
-        );
-        return;
-      }
+    const host = window.location.hostname || 'localhost';
+    const isLocalHost =
+      host === 'localhost' || host === '127.0.0.1' || host === '::1';
+
+    if (!window.isSecureContext && !isLocalHost) {
+      setError(`Voice input needs HTTPS on ${host}. Open the app on localhost or use HTTPS.`);
+      return;
     }
 
     const recognition = new SpeechRecognition();
@@ -74,9 +66,16 @@ export function useVoice(onResult: (result: string) => void, language: string = 
 
     recognition.onerror = (event: any) => {
       const code = event?.error || 'speech-error';
-      const host = window.location.hostname || 'localhost';
+
+      if ((code === 'not-allowed' || code === 'service-not-allowed') && !window.isSecureContext && !isLocalHost) {
+        setError(`Voice input is blocked on ${host} over HTTP. Use HTTPS or localhost.`);
+        setIsListening(false);
+        recognitionRef.current = null;
+        return;
+      }
+
       setError(
-        code === 'not-allowed'
+        code === 'not-allowed' || code === 'service-not-allowed'
           ? `Please allow microphone access for ${host} in your browser site settings.`
           : code
       );

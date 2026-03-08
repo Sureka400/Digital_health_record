@@ -1,7 +1,10 @@
-const API_URL = (import.meta.env.VITE_API_URL as string) || 
-  (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
-    ? 'http://localhost:4000/api' 
-    : `${window.location.protocol}//${window.location.hostname}:4000/api`);
+const API_URL = (import.meta.env.VITE_API_URL as string) ||
+  (() => {
+    const host = window.location.hostname;
+    const protocol = window.location.protocol === 'https:' ? 'https:' : 'http:';
+    const apiHost = host === 'localhost' || host === '127.0.0.1' ? 'localhost' : host;
+    return `${protocol}//${apiHost}:4000/api`;
+  })();
 
 async function request(endpoint: string, options: RequestInit = {}) {
   const token = localStorage.getItem('token');
