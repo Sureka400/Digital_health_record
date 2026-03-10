@@ -6,6 +6,7 @@ import { UserManagementTab } from '@/app/components/admin/UserManagementTab';
 import { PolicyInsightsTab } from '@/app/components/admin/PolicyInsightsTab';
 import { SystemMonitoringTab } from '@/app/components/admin/SystemMonitoringTab';
 import { useTranslation } from '@/app/utils/translations';
+import { api } from '@/app/utils/api';
 
 interface AdminDashboardProps {
   user: any;
@@ -31,12 +32,20 @@ export function AdminDashboard({ user, onLogout, language = 'en' }: AdminDashboa
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center">
-                <User className="w-6 h-6 text-white" />
-              </div>
               <div>
                 <h1 className="text-2xl font-bold">{t('adminPortal')}</h1>
                 <p className="text-sm opacity-90">{user?.name || 'Administrator'} • {t('governmentOfKerala')}</p>
+              </div>
+              <div className="w-12 h-12 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center overflow-hidden border-2 border-white/30 shadow-inner">
+                {user?.photoUrl ? (
+                  <img
+                    src={`${api.API_URL.replace('/api', '')}/uploads/${user.photoUrl}`}
+                    alt={user?.name || 'Admin'}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <User className="w-6 h-6 text-white" />
+                )}
               </div>
             </div>
             <div className="flex items-center gap-3">

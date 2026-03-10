@@ -5,6 +5,7 @@ import { Card } from '@/app/components/ui/card';
 import { Button } from '@/app/components/ui/button';
 import { Input } from '@/app/components/ui/input';
 import { Badge } from '@/app/components/ui/badge';
+import { api } from '@/app/utils/api';
 import {
   Dialog,
   DialogContent,
@@ -24,6 +25,7 @@ interface UserRecord {
   verified: boolean;
   lastActive: string;
   status: 'active' | 'pending' | 'suspended';
+  photoUrl?: string;
 }
 
 export function UserManagementTab() {
@@ -74,6 +76,7 @@ export function UserManagementTab() {
       verified: true,
       lastActive: '5 hours ago',
       status: 'active',
+      photoUrl: 'patient-profile.jpg' // just for demo
     },
   ];
 
@@ -211,8 +214,16 @@ export function UserManagementTab() {
               <div className="flex items-start justify-between">
                 <div className="flex gap-4 flex-1">
                   {/* Avatar */}
-                  <div className={`w-12 h-12 rounded-full ${getRoleColor(user.role)} flex items-center justify-center`}>
-                    {getRoleIcon(user.role)}
+                  <div className={`w-12 h-12 rounded-full ${getRoleColor(user.role)} flex items-center justify-center overflow-hidden border-2 border-[#0b6e4f]/10`}>
+                    {user.photoUrl ? (
+                      <img
+                        src={`${api.API_URL.replace('/api', '')}/uploads/${user.photoUrl}`}
+                        alt={user.name}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      getRoleIcon(user.role)
+                    )}
                   </div>
 
                   {/* Info */}
@@ -311,14 +322,22 @@ function UserDetailDialog({ user, open, onOpenChange }: {
       <DialogContent className="sm:max-w-md bg-zinc-950 border-zinc-800 text-white">
         <DialogHeader>
           <div className="flex items-center gap-4 mb-2">
-            <div className={`w-12 h-12 rounded-full flex items-center justify-center ${
+            <div className={`w-12 h-12 rounded-full flex items-center justify-center overflow-hidden border-2 border-white/20 ${
               user.role === 'doctor' ? 'bg-blue-100 text-blue-700' :
               user.role === 'hospital' ? 'bg-purple-100 text-purple-700' :
               'bg-green-100 text-green-700'
             }`}>
-              {user.role === 'doctor' ? <User className="w-6 h-6" /> :
-               user.role === 'hospital' ? <Building2 className="w-6 h-6" /> :
-               <User className="w-6 h-6" />}
+              {user.photoUrl ? (
+                <img
+                  src={`${api.API_URL.replace('/api', '')}/uploads/${user.photoUrl}`}
+                  alt={user.name}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                user.role === 'doctor' ? <User className="w-6 h-6" /> :
+                user.role === 'hospital' ? <Building2 className="w-6 h-6" /> :
+                <User className="w-6 h-6" />
+              )}
             </div>
             <div>
               <DialogTitle className="text-xl font-bold">{user.name}</DialogTitle>

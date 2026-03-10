@@ -8,6 +8,7 @@ import { AIClinicalTab } from '@/app/components/doctor/AIClinicalTab';
 import { MyAppointmentsTab } from '@/app/components/doctor/MyAppointmentsTab';
 import { useTranslation } from '@/app/utils/translations';
 import { useLanguage } from '@/app/context/LanguageContext';
+import { api } from '@/app/utils/api';
 
 interface DoctorDashboardProps {
   user: any;
@@ -43,12 +44,20 @@ export function DoctorDashboard({ user, onLogout }: DoctorDashboardProps) {
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center">
-                <User className="w-6 h-6 text-white" />
-              </div>
               <div>
                 <h1 className="text-2xl font-bold">{t('doctorPortal')}</h1>
                 <p className="text-sm opacity-90">{t('welcomeUser')}, {user?.name || 'Doctor'}</p>
+              </div>
+              <div className="w-12 h-12 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center overflow-hidden border-2 border-white/30 shadow-inner">
+                {user?.photoUrl ? (
+                  <img
+                    src={`${api.API_URL.replace('/api', '')}/uploads/${user.photoUrl}`}
+                    alt={user?.name || 'Doctor'}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <User className="w-6 h-6 text-white" />
+                )}
               </div>
             </div>
             <div className="flex items-center gap-3">

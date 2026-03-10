@@ -101,26 +101,37 @@ export function HealthQRTab({ user }: { user: any }) {
         </motion.div>
 
         {/* Patient Info */}
-        <div className="bg-accent rounded-xl p-4 mb-6 text-left">
-          <div className="grid grid-cols-2 gap-3 text-sm">
-            <div>
-              <p className="text-muted-foreground">{t('name')}</p>
-              <p className="font-medium">{user?.name || '...'}</p>
+        <div className="bg-accent rounded-xl p-4 mb-6 text-left relative overflow-hidden">
+          <div className="flex justify-between items-start">
+            <div className="grid grid-cols-2 gap-3 text-sm flex-1">
+              <div>
+                <p className="text-muted-foreground">{t('name')}</p>
+                <p className="font-medium">{user?.name || '...'}</p>
+              </div>
+              <div>
+                <p className="text-muted-foreground">Blockchain ID</p>
+                <p className="font-medium truncate text-xs" title={user?.blockchainId}>
+                  {user?.blockchainId ? `${user.blockchainId.substring(0, 10)}...${user.blockchainId.substring(user.blockchainId.length - 4)}` : '...'}
+                </p>
+              </div>
+              <div>
+                <p className="text-muted-foreground">{t('bloodGroup')}</p>
+                <p className="font-medium text-red-600">{user?.bloodGroup || '...'}</p>
+              </div>
+              <div>
+                <p className="text-muted-foreground">{t('age')}</p>
+                <p className="font-medium">{user?.age || '...'} {t('years')}</p>
+              </div>
             </div>
-            <div>
-              <p className="text-muted-foreground">Blockchain ID</p>
-              <p className="font-medium truncate text-xs" title={user?.blockchainId}>
-                {user?.blockchainId ? `${user.blockchainId.substring(0, 10)}...${user.blockchainId.substring(user.blockchainId.length - 4)}` : '...'}
-              </p>
-            </div>
-            <div>
-              <p className="text-muted-foreground">{t('bloodGroup')}</p>
-              <p className="font-medium text-red-600">{user?.bloodGroup || '...'}</p>
-            </div>
-            <div>
-              <p className="text-muted-foreground">{t('age')}</p>
-              <p className="font-medium">{user?.age || '...'} {t('years')}</p>
-            </div>
+            {user?.photoUrl && (
+              <div className="w-20 h-20 rounded-lg overflow-hidden border-2 border-[#0b6e4f]/20 ml-4 shrink-0">
+                <img
+                  src={`${api.API_URL.replace('/api', '')}/uploads/${user.photoUrl}`}
+                  alt={user?.name || 'User'}
+                  className="w-full h-full object-cover"
+                />
+              </div>
+            )}
           </div>
         </div>
 

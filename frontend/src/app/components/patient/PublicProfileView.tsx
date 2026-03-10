@@ -130,41 +130,45 @@ export function PublicProfileView({ blockchainId, onClose, language }: PublicPro
         >
           {/* Patient Header Card */}
           <Card className="bg-zinc-900/50 border-zinc-800 text-white p-6 relative overflow-hidden">
-            <div className="absolute top-0 right-0 p-4 opacity-10">
-              {patient.photoUrl ? (
-                <img
-                  src={`${api.API_URL.replace('/api', '')}/uploads/${patient.photoUrl}`}
-                  alt={patient.name}
-                  className="w-24 h-24 object-cover rounded-full border border-zinc-700"
-                />
-              ) : (
-                <User className="w-24 h-24" />
-              )}
+            <div className="flex justify-between items-start relative z-10">
+              <div className="flex-1">
+                <h2 className="text-3xl font-bold mb-4">{patient.name}</h2>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <div>
+                    <p className="text-xs text-zinc-500 uppercase font-bold">Age</p>
+                    <p className="text-lg">{patient.age || 'N/A'} Yrs</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-zinc-500 uppercase font-bold">Gender</p>
+                    <p className="text-lg">{patient.gender}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-zinc-500 uppercase font-bold">Blood Group</p>
+                    <p className="text-lg text-red-500 font-bold">{patient.bloodGroup}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-zinc-500 uppercase font-bold">ABHA ID</p>
+                    <p className="text-sm font-bold text-[#0b6e4f]">{patient.abhaId || 'N/A'}</p>
+                  </div>
+                </div>
+              </div>
+              <div className="w-24 h-24 rounded-2xl overflow-hidden border-2 border-[#0b6e4f]/20 ml-4 shrink-0 shadow-2xl">
+                {patient.photoUrl ? (
+                  <img
+                    src={`${api.API_URL.replace('/api', '')}/uploads/${patient.photoUrl}`}
+                    alt={patient.name}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <div className="w-full h-full bg-zinc-800 flex items-center justify-center">
+                    <User className="w-12 h-12 text-zinc-600" />
+                  </div>
+                )}
+              </div>
             </div>
-            <div className="relative z-10">
-              <h2 className="text-3xl font-bold mb-4">{patient.name}</h2>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div>
-                  <p className="text-xs text-zinc-500 uppercase font-bold">Age</p>
-                  <p className="text-lg">{patient.age || 'N/A'} Yrs</p>
-                </div>
-                <div>
-                  <p className="text-xs text-zinc-500 uppercase font-bold">Gender</p>
-                  <p className="text-lg">{patient.gender}</p>
-                </div>
-                <div>
-                  <p className="text-xs text-zinc-500 uppercase font-bold">Blood Group</p>
-                  <p className="text-lg text-red-500 font-bold">{patient.bloodGroup}</p>
-                </div>
-                <div>
-                  <p className="text-xs text-zinc-500 uppercase font-bold">ABHA ID</p>
-                  <p className="text-sm font-bold text-[#0b6e4f]">{patient.abhaId || 'N/A'}</p>
-                </div>
-              </div>
-              <div className="mt-6 pt-6 border-t border-zinc-800">
-                <p className="text-[10px] text-zinc-500 uppercase font-bold mb-1">Blockchain Wallet Address</p>
-                <p className="text-xs font-mono text-[#0b6e4f] break-all">{patient.blockchainId}</p>
-              </div>
+            <div className="mt-6 pt-6 border-t border-zinc-800 relative z-10">
+              <p className="text-[10px] text-zinc-500 uppercase font-bold mb-1">Blockchain Wallet Address</p>
+              <p className="text-xs font-mono text-[#0b6e4f] break-all">{patient.blockchainId}</p>
             </div>
           </Card>
 

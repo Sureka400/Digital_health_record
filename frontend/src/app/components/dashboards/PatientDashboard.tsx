@@ -323,17 +323,6 @@ export function PatientDashboard({ onLogout, language, user: initialUser }: Pati
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center overflow-hidden">
-                {user?.photoUrl ? (
-                  <img
-                    src={`${api.API_URL.replace('/api', '')}/uploads/${user.photoUrl}`}
-                    alt={user?.name || 'User'}
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <User className="w-6 h-6 text-white" />
-                )}
-              </div>
               <div>
                 <h1 className="text-2xl font-bold">{t('patientPortal')}</h1>
                 <p className="text-sm opacity-90">{t('welcomeUser')}, {user?.name || 'User'}</p>
@@ -358,6 +347,17 @@ export function PatientDashboard({ onLogout, language, user: initialUser }: Pati
                       <p className="text-xs text-red-200 mt-1">{quickPhotoError}</p>
                     )}
                   </div>
+                )}
+              </div>
+              <div className="w-12 h-12 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center overflow-hidden border-2 border-white/30 shadow-inner">
+                {user?.photoUrl ? (
+                  <img
+                    src={`${api.API_URL.replace('/api', '')}/uploads/${user.photoUrl}`}
+                    alt={user?.name || 'User'}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <User className="w-6 h-6 text-white" />
                 )}
               </div>
             </div>
