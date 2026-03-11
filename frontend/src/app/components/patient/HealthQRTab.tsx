@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
-import { QrCode, Download, Share2, Wifi, Loader2 } from 'lucide-react';
+import { QrCode, Download, Share2, Wifi, Loader2, ExternalLink } from 'lucide-react';
 import { Card } from '@/app/components/ui/card';
 import { Button } from '@/app/components/ui/button';
 import { useTranslation } from '@/app/utils/translations';
@@ -12,6 +12,7 @@ export function HealthQRTab({ user }: { user: any }) {
   const { t } = useTranslation(language);
   const [qrData, setQrData] = useState<{ qrCodeDataUrl: string, blockchainId: string } | null>(null);
   const [loading, setLoading] = useState(true);
+  const [showShareLink, setShowShareLink] = useState(false);
 
   useEffect(() => {
     fetchQrData();
@@ -46,6 +47,7 @@ export function HealthQRTab({ user }: { user: any }) {
 
   const handleShare = async () => {
     if (!shareUrl) return;
+    setShowShareLink(!showShareLink);
     
     if (navigator.share) {
       try {
@@ -55,11 +57,12 @@ export function HealthQRTab({ user }: { user: any }) {
           url: shareUrl,
         });
       } catch (err) {
-        console.error('Error sharing:', err);
+        if (err instanceof Error && err.name !== 'AbortError') {
+          console.error('Error sharing:', err);
+        }
       }
     } else {
       await navigator.clipboard.writeText(shareUrl);
-      alert('Profile link copied to clipboard');
     }
   };
 
@@ -160,14 +163,42 @@ export function HealthQRTab({ user }: { user: any }) {
             {t('download')}
           </Button>
           <Button 
-            variant="outline" 
+            variant={showShareLink ? "default" : "outline"} 
             icon={<Share2 className="w-4 h-4" />}
             onClick={handleShare}
             disabled={!shareUrl}
+            className={showShareLink ? "bg-[#0b6e4f] text-white hover:bg-[#0b6e4f]/90" : ""}
           >
             {t('share')}
           </Button>
         </div>
+
+        {/* Share Link Display */}
+        {showShareLink && (
+          <motion.div 
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mt-4 p-3 bg-zinc-900/50 rounded-lg border border-zinc-800 text-left"
+          >
+            <p className="text-xs text-muted-foreground mb-2">{t('shareLink')}</p>
+            <div className="flex gap-2 items-center">
+              <input 
+                readOnly
+                value={shareUrl}
+                className="flex-1 bg-zinc-950 border border-zinc-800 rounded px-2 py-1 text-xs font-mono text-zinc-400"
+                onClick={(e) => (e.target as HTMLInputElement).select()}
+              />
+              <Button 
+                size="sm"
+                className="bg-[#0b6e4f] text-white hover:bg-[#0b6e4f]/90 h-8"
+                onClick={() => window.open(shareUrl, '_blank')}
+                icon={<ExternalLink className="w-3 h-3" />}
+              >
+                {t('openLink')}
+              </Button>
+            </div>
+          </motion.div>
+        )}
       </Card>
 
       {/* Offline Access Info */}

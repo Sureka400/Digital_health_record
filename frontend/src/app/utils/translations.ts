@@ -247,6 +247,8 @@ export const translations: Record<string, any> = {
     "Or enter token manually": "Or enter token manually",
     "View Record Details": "View Record Details",
     "Camera Preview": "Camera Preview",
+    "shareLink": "Share Link",
+    "openLink": "Open Link",
     // Common Medical Record Titles
     "General Checkup & Medication": "General Checkup & Medication",
     "Blood Test - Complete Blood Count": "Blood Test - Complete Blood Count",
@@ -484,6 +486,8 @@ export const translations: Record<string, any> = {
     startConsultation: "കൺസൾട്ടേഷൻ ആരംഭിക്കുക",
     quickSecureAccess: "വേഗതയേറിയതും സുരക്ഷിതവുമായ പ്രവേശനം",
     qrPrivacyDesc: "സ്വകാര്യതയും സുരക്ഷയും നിലനിർത്തിക്കൊണ്ട് രോഗിയുടെ റെക്കോർഡുകളിലേക്ക് ക്യുആർ കോഡ് ഉടനടി പ്രവേശനം നൽകുന്നു. എല്ലാ പ്രവേശനങ്ങളും ലോഗ് ചെയ്യപ്പെടുകയും രോഗിയുടെ സമ്മതം ആവശ്യമായി വരികയും ചെയ്യുന്നു.",
+    shareLink: "പങ്കിടൽ ലിങ്ക്",
+    openLink: "ലിങ്ക് തുറക്കുക",
     // Common Medical Record Titles
     "General Checkup & Medication": "ജനറൽ ചെക്കപ്പ് & മരുന്നുകൾ",
     "Blood Test - Complete Blood Count": "രക്തപരിശോധന - കംപ്ലീറ്റ് ബ്ലഡ് കൗണ്ട്",
@@ -591,7 +595,9 @@ export const translations: Record<string, any> = {
     private: "निजी",
     shared: "साझा किया गया",
     allRecordsLinked: "सभी रिकॉर्ड आपके स्वास्थ्य त्वरित प्रतिक्रिया कोड से जुड़े हैं",
-    qrLinkDesc: "चिकित्सकों को आपके साझा चिकित्सा इतिहास तक तुरंत पहुंच देने के लिए केरल के किसी भी अस्पताल में अपना त्वरित प्रतिक्रिया कोड स्कैन करें। आप सहमति नियंत्रण के माध्यम से निर्धारित कर सकते हैं कि क्या साझा किया जाए।",
+    qrPrivacyDesc: "चिकित्सकों को आपके साझा चिकित्सा इतिहास तक तुरंत पहुंच देने के लिए केरल के किसी भी अस्पताल में अपना त्वरित प्रतिक्रिया कोड स्कैन करें। आप सहमति नियंत्रण के माध्यम से निर्धारित कर सकते हैं कि क्या साझा किया जाए।",
+    shareLink: "साझा करने का लिंक",
+    openLink: "लिंक खोलें",
     // AI Assistant (Hindi)
     aiHealthAssistant: "कृत्रिम मेधा स्वास्थ्य सहायक",
     multilingualVoiceEnabled: "बहुभाषी • आवाज-सक्षम • २४/७ उपलब्ध",
@@ -765,7 +771,9 @@ export const translations: Record<string, any> = {
     private: "தனியார்",
     shared: "பகிரப்பட்டது",
     allRecordsLinked: "அனைத்து பதிவுகளும் உங்கள் சுகாதார க்யுஆர் உடன் இணைக்கப்பட்டுள்ளன",
-    qrLinkDesc: "உங்கள் பகிரப்பட்ட மருத்துவ வரலாற்றை மருத்துவர்கள் உடனடியாக அணுக கேரளா முழுவதும் உள்ள எந்த மருத்துவமனையிலும் உங்கள் க்யுஆர் குறியீட்டை ஸ்கேன் செய்யுங்கள். எதைப் பகிர வேண்டும் என்பதை நீங்கள் ஒப்புதல் மாற்றங்கள் மூலம் கட்டுப்படுத்தலாம்.",
+    qrLinkDesc: "உங்கள் பகிரப்பட்ட மருத்துவ வரலாற்றை மருத்துவர்கள் உடனடியாக அணுக கேரளா முழுவதும் உள்ள எந்த மருத்துவமனையிலும் உங்கள் க்யுஆர் குறியீட்டை ஸக்கேன் செய்யுங்கள். எதைப் பகிர வேண்டும் என்பதை நீங்கள் ஒப்புதல் மாற்றங்கள் மூலம் கட்டுப்படுத்தலாம்.",
+    shareLink: "பகிர்வு இணைப்பு",
+    openLink: "இணைப்பைத் திறக்கவும்",
     // AI Assistant (Tamil)
     aiHealthAssistant: "ஏஐ சுகாதார உதவியாளர்",
     multilingualVoiceEnabled: "பலமொழி • குரல் வசதி • 24/7 கிடைக்கும்",
@@ -940,6 +948,8 @@ export const translations: Record<string, any> = {
     shared: "শেয়ার করা হয়েছে",
     allRecordsLinked: "সব রেকর্ড আপনার স্বাস্থ্য কিউআর-এর সাথে যুক্ত",
     qrLinkDesc: "আপনার শেয়ার করা মেডিকেল ইতিহাসে ডাক্তারদের তাত্ক্ষণিক অ্যাক্সেস দিতে কেরালার যেকোনো হাসপাতালে আপনার কিউআর কোড স্ক্যান করুন। সম্মতি টগলের মাধ্যমে আপনি কী শেয়ার করবেন তা নিয়ন্ত্রণ করতে পারেন।",
+    shareLink: "শেয়ার লিঙ্ক",
+    openLink: "লিঙ্ক খুলুন",
     // AI Assistant (Bengali)
     aiHealthAssistant: "এআই স্বাস্থ্য সহকারী",
     multilingualVoiceEnabled: "বহুভাষী • ভয়েস-সক্ষম • ২৪/৭ উপলব্ধ",
