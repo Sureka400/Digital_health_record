@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
-import { FileText, Calendar, User, Clock, AlertCircle, Loader2, ShieldCheck, Activity, HeartPulse, Download, Share2, Phone, Heart } from 'lucide-react';
+import { FileText, Calendar, User, Clock, AlertCircle, Loader2, ShieldCheck, Activity, HeartPulse, Download, Phone, Heart } from 'lucide-react';
 import { Card } from '@/app/components/ui/card';
 import { Button } from '@/app/components/ui/button';
 import { Badge } from '@/app/components/ui/badge';
@@ -39,24 +39,6 @@ export function PublicProfileView({ blockchainId, onClose, language }: PublicPro
   const handleDownload = () => {
     // In a real app, this might generate a PDF of the profile
     window.print();
-  };
-
-  const handleShare = async () => {
-    const shareUrl = window.location.href;
-    if (navigator.share) {
-      try {
-        await navigator.share({
-          title: `Health Profile: ${data?.patient?.name}`,
-          text: `Verified health profile secured by Blockchain`,
-          url: shareUrl,
-        });
-      } catch (err) {
-        console.error('Error sharing:', err);
-      }
-    } else {
-      await navigator.clipboard.writeText(shareUrl);
-      alert('Link copied to clipboard');
-    }
   };
 
   if (loading) {
@@ -108,14 +90,6 @@ export function PublicProfileView({ blockchainId, onClose, language }: PublicPro
               title="Download/Print"
             >
               <Download className="w-5 h-5" />
-            </Button>
-            <Button 
-              variant="ghost" 
-              onClick={handleShare} 
-              className="text-zinc-400 hover:text-white"
-              title="Share Profile"
-            >
-              <Share2 className="w-5 h-5" />
             </Button>
             <Button variant="ghost" onClick={onClose} className="text-zinc-400 hover:text-white">
               ✕
