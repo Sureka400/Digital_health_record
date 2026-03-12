@@ -12,6 +12,9 @@ const PatientSchema = new mongoose.Schema({
   password: { type: String, required: true },
   phone_enc: { type: String },
   role: { type: String, enum: roles, default: 'PATIENT' },
+  verified: { type: Boolean, default: false },
+  status: { type: String, enum: ['active', 'pending', 'suspended'], default: 'active' },
+  organization: { type: String },
   preferredLanguage: { type: String, default: 'en' },
   homeState: { type: String }, // For migrant workers
   dob: { type: Date },

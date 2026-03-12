@@ -10,6 +10,8 @@ const recordRoutes = require('./routes/records');
 const consentRoutes = require('./routes/consent');
 const appointmentRoutes = require('./routes/appointments');
 const aiRoutes = require('./routes/ai');
+const analyticsRoutes = require('./routes/analytics');
+const adminRoutes = require('./routes/admin');
 const { errorHandler } = require('./middlewares/errorHandler');
 
 const path = require('path');
@@ -63,6 +65,8 @@ app.use('/api/records', recordRoutes);
 app.use('/api/consents', consentRoutes);
 app.use('/api/appointments', appointmentRoutes);
 app.use('/api/ai', aiRoutes);
+app.use('/api/analytics', analyticsRoutes);
+app.use('/api/admin', adminRoutes);
 
 app.get('/', (req, res) => res.json({ ok: true, service: 'patient-module' }));
 
