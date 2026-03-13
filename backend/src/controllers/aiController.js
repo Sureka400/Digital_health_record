@@ -404,3 +404,77 @@ exports.generateClinicalNotes = async (req, res) => {
     res.status(500).json({ message: 'Error generating clinical notes', error: error.message });
   }
 };
+
+exports.clinicalChat = async (req, res) => {
+  try {
+    const { messages, patientId, appointmentId } = req.body;
+
+    if (!messages || !Array.isArray(messages)) {
+      return res.status(400).json({ message: 'Messages array is required' });
+    }
+
+    let contextData = {};
+    if (appointmentId) {
+      const appointment = await Appointment.findById(appointmentId).populate('patient');
+      if (appointment) {
+        const records = await HealthRecord.find({ patient: appointment.patient?._id }).sort({ createdAt: -1 }).limit(5);
+        contextData = {
+          patient: appointment.patient,
+          appointment: {
+            specialty: appointment.specialty,
+            type: appointment.type,
+            date: appointment.date
+          },
+          recentRecords: records.map(r => ({
+            title: r.title,
+            description: r.description,
+            category: r.category,
+            date: r.createdAt
+          }))
+        };
+      }
+    } else if (patientId) {
+      const patient = await Patient.findById(patientId);
+      if (patient) {
+        const records = await HealthRecord.find({ patient: patient._id }).sort({ createdAt: -1 }).limit(5);
+        contextData = {
+          patient,
+          recentRecords: records.map(r => ({
+            title: r.title,
+            description: r.description,
+            category: r.category,
+            date: r.createdAt
+          }))
+        };
+      }
+    }
+
+    const systemPrompt = `You are a professional Clinical AI Assistant for doctors in a Digital Health Record application. 
+    You provide clinical decision support, summarize patient history, and help with medical queries.
+    Always maintain a professional, clinical tone.
+    Your answers should be evidence-based and concise.
+    ${Object.keys(contextData).length > 0 ? `\n\nContext for current clinical case:\n${JSON.stringify(contextData, null, 2)}` : ''}`;
+
+    const apiMessages = [
+      { role: 'system', content: systemPrompt },
+      ...messages
+    ];
+
+    if (!openai) {
+      return res.status(503).json({ message: 'AI service is currently unavailable' });
+    }
+
+    const response = await openai.chat.completions.create({
+      model: process.env.AI_MODEL || 'llama-3.3-70b-versatile',
+      messages: apiMessages,
+    });
+
+    res.json({
+      answer: response.choices[0].message.content,
+      usage: response.usage
+    });
+  } catch (error) {
+    console.error('Clinical Chat Error:', error);
+    res.status(500).json({ message: 'Error connecting to AI service' });
+  }
+};

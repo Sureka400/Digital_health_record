@@ -9,5 +9,6 @@ router.get('/schemes', authenticate, aiController.getAiSchemeRecommendations);
 router.post('/schemes/chat', authenticate, aiController.chatAboutSchemes);
 router.get('/insights', authenticate, aiController.getHealthInsights);
 router.post('/clinical-notes', authenticate, aiController.generateClinicalNotes);
+router.post('/clinical-chat', authenticate, aiController.clinicalChat);
 
 module.exports = router;

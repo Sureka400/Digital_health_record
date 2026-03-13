@@ -275,12 +275,12 @@ export function UserManagementTab() {
           ) : (
             <div className="space-y-2">
               {pendingAppointments.slice(0, 4).map((appt) => (
-                <div key={appt.id} className="p-3 bg-white rounded-lg border border-yellow-200">
-                  <p className="font-semibold text-foreground">{appt.patientName}</p>
-                  <p className="text-xs text-muted-foreground">
+                <div key={appt.id} className="p-3 bg-yellow-50 rounded-lg border border-yellow-200 text-zinc-900">
+                  <p className="font-semibold text-zinc-900">{appt.patientName}</p>
+                  <p className="text-xs text-zinc-700">
                     {appt.specialty} • {appt.doctor} • {new Date(appt.date).toLocaleDateString('en-IN')} {appt.time}
                   </p>
-                  <p className="text-xs text-muted-foreground">{appt.hospital}</p>
+                  <p className="text-xs text-zinc-700">{appt.hospital}</p>
                 </div>
               ))}
             </div>
