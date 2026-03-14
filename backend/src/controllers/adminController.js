@@ -77,7 +77,7 @@ exports.updateUser = async (req, res, next) => {
     const { id } = req.params;
     const updates = {};
     const allowedStatuses = ['active', 'pending', 'suspended'];
-    const allowedRoles = ['PATIENT', 'DOCTOR', 'ADMIN'];
+    const allowedRoles = ['PATIENT', 'DOCTOR', 'ADMIN', 'HOSPITAL'];
 
     if (req.body.status && allowedStatuses.includes(req.body.status)) {
       updates.status = req.body.status;

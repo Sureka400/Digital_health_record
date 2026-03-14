@@ -1,265 +1,266 @@
-import React from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { motion } from 'motion/react';
-import { Sparkles, TrendingUp, AlertTriangle, Target, Download, Brain } from 'lucide-react';
+import { Sparkles, TrendingUp, AlertTriangle, Target, RefreshCw, Brain, Activity, MapPin } from 'lucide-react';
 import { Card } from '@/app/components/ui/card';
 import { Button } from '@/app/components/ui/button';
 import { Badge } from '@/app/components/ui/badge';
+import { api } from '@/app/utils/api';
+
+type PolicyInsightsResponse = {
+  summary: {
+    totalPatients: number;
+    totalRecords: number;
+    patientsWithRecords: number;
+    coveragePercent: number;
+    uniqueHospitals: number;
+    last30Records: number;
+    prev30Records: number;
+    growth30d: number;
+  };
+  topCategories: { category: string; total: number; last30: number }[];
+  hotspots: { hospital: string; count: number }[];
+  coverageTrend: { day: string; total: number }[];
+  recommendations: { title: string; category: string; expectedImpact: string; action: string; priority: 'low' | 'medium' | 'high' }[];
+  alerts: { title: string; severity: 'info' | 'warning' | 'danger'; detail: string }[];
+};
+
+function formatNumber(value: number) {
+  return value.toLocaleString('en-IN');
+}
 
 export function PolicyInsightsTab() {
-  const aiPredictions = [
-    {
-      title: 'Predicted Seasonal Flu Outbreak',
-      severity: 'high',
-      location: 'Ernakulam District',
-      timeline: 'Next 2-3 weeks',
-      confidence: '87%',
-      recommendation: 'Increase vaccination drives and stock emergency supplies',
-      impact: 'Estimated 2,500+ cases',
-    },
-    {
-      title: 'Diabetes Prevalence Rising',
-      severity: 'medium',
-      location: 'Statewide',
-      timeline: 'Ongoing trend',
-      confidence: '92%',
-      recommendation: 'Expand diabetes screening programs in high-risk zones',
-      impact: 'Current: 18% of registered workers',
-    },
-    {
-      title: 'Healthcare Access Gap',
-      severity: 'medium',
-      location: 'Rural Areas - Idukki, Wayanad',
-      timeline: 'Immediate',
-      confidence: '78%',
-      recommendation: 'Deploy mobile health units and telemedicine services',
-      impact: '45,000 workers underserved',
-    },
-  ];
+  const [data, setData] = useState<PolicyInsightsResponse | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const highRiskZones = [
-    { zone: 'Ernakulam - Industrial Area', risk: 'High', population: 38000, reason: 'High density, poor sanitation' },
-    { zone: 'Kozhikode - Construction Sites', risk: 'Medium', population: 12000, reason: 'Injury-prone work' },
-    { zone: 'Trivandrum - Coastal Region', risk: 'Medium', population: 8500, reason: 'Waterborne diseases' },
-  ];
+  const fetchInsights = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const res = await api.get('/analytics/policy');
+      setData(res);
+    } catch (err: any) {
+      setError(err.message || 'Failed to load policy insights');
+    } finally {
+      setLoading(false);
+    }
+  };
 
-  const policyRecommendations = [
-    {
-      category: 'Preventive Care',
-      recommendation: 'Mandatory quarterly health screenings for construction workers',
-      expectedImpact: '30% reduction in late-stage disease detection',
-      budget: '₹2.5 Cr annually',
-    },
-    {
-      category: 'Digital Infrastructure',
-      recommendation: 'Expand QR code distribution to 100% coverage',
-      expectedImpact: 'Universal health record access across Kerala',
-      budget: '₹1.2 Cr one-time',
-    },
-    {
-      category: 'Health Education',
-      recommendation: 'Multilingual health awareness campaigns',
-      expectedImpact: '50% increase in preventive care adoption',
-      budget: '₹80 Lakh annually',
-    },
-  ];
+  useEffect(() => {
+    fetchInsights();
+  }, []);
+
+  const maxCategoryTotal = useMemo(() => {
+    if (!data?.topCategories?.length) return 1;
+    return Math.max(...data.topCategories.map((c) => c.total || 0), 1);
+  }, [data]);
+
+  if (loading) {
+    return (
+      <Card className="p-6">
+        <div className="flex items-center gap-3 text-muted-foreground">
+          <RefreshCw className="w-5 h-5 animate-spin" />
+          <span>Loading policy insights from live data…</span>
+        </div>
+      </Card>
+    );
+  }
+
+  if (error || !data) {
+    return (
+      <Card className="p-6 bg-red-50 border-red-200">
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-red-700 font-semibold">Unable to load policy insights</p>
+            <p className="text-sm text-red-600">{error}</p>
+          </div>
+          <Button variant="outline" onClick={fetchInsights} icon={<RefreshCw className="w-4 h-4" />}>
+            Retry
+          </Button>
+        </div>
+      </Card>
+    );
+  }
+
+  const { summary, topCategories, hotspots, coverageTrend, recommendations, alerts } = data;
 
   return (
     <div className="space-y-6">
       {/* Header */}
       <Card className="bg-gradient-to-r from-purple-50 to-blue-50 border-purple-200">
-        <div className="flex items-center gap-3">
-          <motion.div
-            className="p-3 bg-gradient-to-br from-purple-500 to-blue-500 rounded-xl"
-            animate={{ scale: [1, 1.05, 1] }}
-            transition={{ duration: 2, repeat: Infinity }}
-          >
-            <Sparkles className="w-6 h-6 text-white" />
-          </motion.div>
-          <div>
-            <h2 className="text-2xl font-bold text-foreground">AI-Powered Policy Insights</h2>
-            <p className="text-sm text-muted-foreground">
-              Data-driven predictions and recommendations for decision-making
-            </p>
-          </div>
-        </div>
-      </Card>
-
-      {/* AI Predictions & Outbreak Detection */}
-      <div>
-        <h3 className="font-semibold text-foreground mb-3 flex items-center gap-2">
-          <Brain className="w-5 h-5 text-purple-600" />
-          AI Predictive Analysis
-        </h3>
-        
-        <div className="space-y-3">
-          {aiPredictions.map((prediction, index) => (
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
             <motion.div
-              key={index}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.1 }}
+              className="p-3 bg-gradient-to-br from-purple-500 to-blue-500 rounded-xl"
+              animate={{ scale: [1, 1.05, 1] }}
+              transition={{ duration: 2, repeat: Infinity }}
             >
-              <Card className={`
-                ${prediction.severity === 'high' ? 'bg-red-50 border-red-200' : ''}
-                ${prediction.severity === 'medium' ? 'bg-orange-50 border-orange-200' : ''}
-                ${prediction.severity === 'low' ? 'bg-yellow-50 border-yellow-200' : ''}
-              `}>
-                <div className="flex items-start justify-between mb-3">
-                  <div>
-                    <h4 className="font-semibold text-foreground mb-1">{prediction.title}</h4>
-                    <p className="text-sm text-muted-foreground">{prediction.location}</p>
-                  </div>
-                  <div className="flex gap-2">
-                    <Badge variant={
-                      prediction.severity === 'high' ? 'danger' :
-                      prediction.severity === 'medium' ? 'warning' :
-                      'default'
-                    }>
-                      {prediction.severity.toUpperCase()}
-                    </Badge>
-                    <Badge variant="ai">
-                      <Sparkles className="w-3 h-3" />
-                      {prediction.confidence}
-                    </Badge>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-3 mb-3">
-                  <div className="p-2 bg-zinc-800/50 backdrop-blur-sm rounded border border-zinc-700">
-                    <p className="text-xs text-gray-400">Timeline</p>
-                    <p className="text-sm font-semibold text-white">{prediction.timeline}</p>
-                  </div>
-                  <div className="p-2 bg-zinc-800/50 backdrop-blur-sm rounded border border-zinc-700">
-                    <p className="text-xs text-gray-400">Impact</p>
-                    <p className="text-sm font-semibold text-white">{prediction.impact}</p>
-                  </div>
-                </div>
-
-                <div className="p-3 bg-zinc-800/50 backdrop-blur-sm rounded-lg mb-3 border border-zinc-700">
-                  <p className="text-xs font-medium text-gray-400 mb-1">
-                    AI Recommendation:
-                  </p>
-                  <p className="text-sm text-foreground">{prediction.recommendation}</p>
-                </div>
-
-                <div className="flex gap-2">
-                  <Button variant="primary" size="sm">
-                    Generate Action Plan
-                  </Button>
-                  <Button variant="outline" size="sm">
-                    View Details
-                  </Button>
-                </div>
-              </Card>
+              <Sparkles className="w-6 h-6 text-white" />
             </motion.div>
-          ))}
-        </div>
-      </div>
-
-      {/* High-Risk Zones */}
-      <Card>
-        <h3 className="font-semibold text-foreground mb-4 flex items-center gap-2">
-          <AlertTriangle className="w-5 h-5 text-red-600" />
-          High-Risk Zones Identified
-        </h3>
-
-        <div className="space-y-3">
-          {highRiskZones.map((zone, index) => (
-            <div
-              key={index}
-              className={`p-4 rounded-lg border ${
-                zone.risk === 'High' ? 'bg-red-50 border-red-200' : 'bg-orange-50 border-orange-200'
-              }`}
-            >
-              <div className="flex items-start justify-between mb-2">
-                <div>
-                  <h4 className="font-semibold text-foreground">{zone.zone}</h4>
-                  <p className="text-sm text-muted-foreground">{zone.population.toLocaleString()} workers</p>
-                </div>
-                <Badge variant={zone.risk === 'High' ? 'danger' : 'warning'}>
-                  {zone.risk} Risk
-                </Badge>
-              </div>
+            <div>
+              <h2 className="text-2xl font-bold text-black">Data-Powered Policy Insights</h2>
               <p className="text-sm text-muted-foreground">
-                <strong>Reason:</strong> {zone.reason}
+                Live recommendations generated from health record activity and coverage data
               </p>
             </div>
-          ))}
-        </div>
-      </Card>
-
-      {/* Policy Recommendations */}
-      <Card>
-        <h3 className="font-semibold text-foreground mb-4 flex items-center gap-2">
-          <Target className="w-5 h-5 text-green-600" />
-          Data-Driven Policy Recommendations
-        </h3>
-
-        <div className="space-y-4">
-          {policyRecommendations.map((policy, index) => (
-            <motion.div
-              key={index}
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: index * 0.1 }}
-              className="p-4 bg-accent rounded-lg"
-            >
-              <div className="flex items-start justify-between mb-2">
-                <Badge variant="info">{policy.category}</Badge>
-                <span className="text-sm font-semibold text-foreground">{policy.budget}</span>
-              </div>
-
-              <h4 className="font-semibold text-foreground mb-2">{policy.recommendation}</h4>
-              
-              <div className="flex items-center gap-2 text-sm text-green-600">
-                <TrendingUp className="w-4 h-4" />
-                <span>{policy.expectedImpact}</span>
-              </div>
-            </motion.div>
-          ))}
-        </div>
-
-        <div className="mt-4">
-          <Button variant="primary" fullWidth icon={<Download className="w-4 h-4" />}>
-            Download Full Policy Report
+          </div>
+          <Button variant="outline" size="sm" onClick={fetchInsights} icon={<RefreshCw className="w-4 h-4" />}>
+            Refresh data
           </Button>
         </div>
       </Card>
 
-      {/* Impact Metrics */}
-      <Card className="bg-gradient-to-r from-green-50 to-blue-50 border-green-200">
-        <h3 className="font-semibold text-foreground mb-3">Projected Impact (Next 12 Months)</h3>
-        
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <p className="text-3xl font-bold text-green-600">25%</p>
-            <p className="text-sm text-muted-foreground">Reduction in preventable diseases</p>
+      {/* Summary metrics */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <Card className="p-4">
+          <p className="text-sm text-muted-foreground">Coverage achieved</p>
+          <p className="text-3xl font-bold text-[#0b6e4f]">{summary.coveragePercent}%</p>
+          <p className="text-xs text-muted-foreground">
+            {formatNumber(summary.patientsWithRecords)} of {formatNumber(summary.totalPatients)} patients have records
+          </p>
+        </Card>
+        <Card className="p-4">
+          <p className="text-sm text-muted-foreground">Records in last 30 days</p>
+          <p className="text-3xl font-bold text-[#2196F3]">{formatNumber(summary.last30Records)}</p>
+          <div className="flex items-center gap-2 text-sm">
+            <TrendingUp className="w-4 h-4 text-[#2196F3]" />
+            <span className={summary.growth30d >= 0 ? 'text-green-600' : 'text-red-600'}>
+              {summary.growth30d >= 0 ? '+' : ''}
+              {summary.growth30d}%
+            </span>
+            <span className="text-muted-foreground">vs previous 30 days</span>
           </div>
-          <div>
-            <p className="text-3xl font-bold text-blue-600">40%</p>
-            <p className="text-sm text-muted-foreground">Faster emergency response</p>
+        </Card>
+        <Card className="p-4">
+          <p className="text-sm text-muted-foreground">Total records</p>
+          <p className="text-3xl font-bold text-[#9c27b0]">{formatNumber(summary.totalRecords)}</p>
+          <p className="text-xs text-muted-foreground">Across {formatNumber(summary.uniqueHospitals)} contributing facilities</p>
+        </Card>
+        <Card className="p-4">
+          <p className="text-sm text-muted-foreground">Volume trend (7d)</p>
+          <div className="flex items-end gap-1 h-14">
+            {coverageTrend.slice(-7).map((d) => (
+              <div
+                key={d.day}
+                className="flex-1 rounded-sm bg-[#0b6e4f]/80"
+                style={{ height: `${Math.min(100, (d.total / Math.max(1, summary.last30Records / 7)) * 100)}%` }}
+                title={`${d.day}: ${d.total} records`}
+              />
+            ))}
           </div>
-          <div>
-            <p className="text-3xl font-bold text-purple-600">₹15 Cr</p>
-            <p className="text-sm text-muted-foreground">Estimated cost savings</p>
+          <p className="text-xs text-muted-foreground mt-1">Daily uploads over last 7 days</p>
+        </Card>
+      </div>
+
+      {/* Alerts */}
+      {alerts?.length > 0 && (
+        <Card className="p-4 bg-orange-50 border-orange-200">
+          <div className="flex items-center gap-2 mb-3">
+            <AlertTriangle className="w-5 h-5 text-orange-600" />
+            <h3 className="font-semibold text-foreground">Alerts that need attention</h3>
           </div>
-          <div>
-            <p className="text-3xl font-bold text-orange-600">90%</p>
-            <p className="text-sm text-muted-foreground">Health record coverage</p>
+          <div className="space-y-2">
+            {alerts.map((alert, idx) => (
+              <div key={idx} className="flex items-start justify-between">
+                <div>
+                  <p className="font-medium text-foreground">{alert.title}</p>
+                  <p className="text-sm text-muted-foreground">{alert.detail}</p>
+                </div>
+                <Badge variant={alert.severity === 'danger' ? 'danger' : alert.severity === 'warning' ? 'warning' : 'info'}>
+                  {alert.severity.toUpperCase()}
+                </Badge>
+              </div>
+            ))}
           </div>
+        </Card>
+      )}
+
+      {/* Top categories */}
+      <Card>
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="font-semibold text-foreground flex items-center gap-2">
+            <Brain className="w-5 h-5 text-purple-600" />
+            Highest-load record categories
+          </h3>
+          <Badge variant="info">Last 30 days focus</Badge>
+        </div>
+        <div className="space-y-3">
+          {topCategories.map((c) => (
+            <div key={c.category} className="p-3 rounded-lg border border-zinc-800 bg-zinc-900/40">
+              <div className="flex items-center justify-between mb-2">
+                <div>
+                  <p className="font-semibold text-foreground">{c.category}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {formatNumber(c.total)} records total • {formatNumber(c.last30)} in last 30 days
+                  </p>
+                </div>
+                <Badge variant="success">{Math.round((c.last30 / Math.max(1, c.total)) * 100)}% recent share</Badge>
+              </div>
+              <div className="h-2 bg-zinc-800 rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-gradient-to-r from-[#0b6e4f] to-[#2196F3]"
+                  style={{ width: `${Math.min(100, (c.total / maxCategoryTotal) * 100)}%` }}
+                />
+              </div>
+            </div>
+          ))}
+          {topCategories.length === 0 && (
+            <p className="text-sm text-muted-foreground">No record categories available yet.</p>
+          )}
         </div>
       </Card>
 
-      {/* AI Transparency */}
-      <Card className="bg-purple-50 border-purple-200">
-        <div className="flex items-start gap-3">
-          <Sparkles className="w-6 h-6 text-purple-600" />
-          <div>
-            <h3 className="font-semibold text-foreground mb-1">About AI Predictions</h3>
-            <p className="text-sm text-muted-foreground">
-              Our AI models analyze patterns from 5M+ health records, weather data, demographic information, and historical disease trends. All predictions include confidence scores and are meant to support, not replace, expert decision-making.
-            </p>
-          </div>
+      {/* Hotspots */}
+      <Card>
+        <h3 className="font-semibold text-foreground mb-4 flex items-center gap-2">
+          <MapPin className="w-5 h-5 text-red-600" />
+          Facilities with highest volume
+        </h3>
+        <div className="grid md:grid-cols-2 gap-3">
+          {hotspots.map((h) => (
+            <div key={h.hospital} className="p-4 rounded-lg border border-zinc-800 bg-zinc-900/40">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="font-semibold text-foreground">{h.hospital || 'Unnamed facility'}</p>
+                  <p className="text-sm text-muted-foreground">{formatNumber(h.count)} records</p>
+                </div>
+                <Badge variant="warning">High load</Badge>
+              </div>
+            </div>
+          ))}
+          {hotspots.length === 0 && <p className="text-sm text-muted-foreground">No hospitals have uploaded data yet.</p>}
+        </div>
+      </Card>
+
+      {/* Recommendations */}
+      <Card>
+        <div className="flex items-center gap-2 mb-4">
+          <Target className="w-5 h-5 text-green-600" />
+          <h3 className="font-semibold text-foreground">Actionable policy moves</h3>
+        </div>
+        <div className="space-y-3">
+          {recommendations.map((rec, idx) => (
+            <motion.div
+              key={idx}
+              initial={{ opacity: 0, x: -10 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: idx * 0.05 }}
+              className="p-4 rounded-lg border border-zinc-800 bg-accent"
+            >
+              <div className="flex items-center justify-between mb-2">
+                <Badge variant="info">{rec.category}</Badge>
+                <Badge variant={rec.priority === 'high' ? 'danger' : rec.priority === 'medium' ? 'warning' : 'default'}>
+                  {rec.priority.toUpperCase()}
+                </Badge>
+              </div>
+              <h4 className="font-semibold text-foreground mb-1">{rec.title}</h4>
+              <p className="text-sm text-muted-foreground mb-2">{rec.action}</p>
+              <div className="flex items-center gap-2 text-sm text-green-600">
+                <Activity className="w-4 h-4" />
+                <span>{rec.expectedImpact}</span>
+              </div>
+            </motion.div>
+          ))}
         </div>
       </Card>
     </div>

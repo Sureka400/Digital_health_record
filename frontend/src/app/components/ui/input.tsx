@@ -5,6 +5,7 @@ interface InputProps {
   placeholder?: string;
   value?: string;
   onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onKeyDown?: (e: React.KeyboardEvent<HTMLInputElement>) => void;
   className?: string;
   icon?: React.ReactNode;
   label?: string;
@@ -18,6 +19,7 @@ export function Input({
   placeholder,
   value,
   onChange,
+  onKeyDown,
   className = '',
   icon,
   label,
@@ -43,6 +45,7 @@ export function Input({
           placeholder={placeholder}
           value={value}
           onChange={onChange}
+          onKeyDown={onKeyDown}
           required={required}
           disabled={disabled}
           accept={accept}

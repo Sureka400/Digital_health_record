@@ -10,6 +10,8 @@ interface ButtonProps {
   disabled?: boolean;
   icon?: React.ReactNode;
   fullWidth?: boolean;
+  type?: 'button' | 'submit' | 'reset';
+  ariaLabel?: string;
 }
 
 export function Button({
@@ -21,6 +23,8 @@ export function Button({
   disabled = false,
   icon,
   fullWidth = false,
+  type = 'button',
+  ariaLabel,
 }: ButtonProps) {
   const baseStyles = 'inline-flex items-center justify-center gap-2 rounded-lg font-medium transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed';
   
@@ -43,6 +47,8 @@ export function Button({
       className={`${baseStyles} ${variants[variant]} ${sizes[size]} ${fullWidth ? 'w-full' : ''} ${className}`}
       onClick={onClick}
       disabled={disabled}
+      type={type}
+      aria-label={ariaLabel}
       whileTap={{ scale: disabled ? 1 : 0.95 }}
     >
       {icon && <span>{icon}</span>}

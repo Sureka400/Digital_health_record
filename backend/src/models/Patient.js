@@ -3,7 +3,7 @@ const bcrypt = require('bcryptjs');
 const { Wallet } = require('ethers');
 const { encryptField, decryptField } = require('../utils/crypto');
 
-const roles = ['PATIENT', 'DOCTOR', 'ADMIN'];
+const roles = ['PATIENT', 'DOCTOR', 'ADMIN', 'HOSPITAL'];
 
 const PatientSchema = new mongoose.Schema({
   name: { type: String, required: true },

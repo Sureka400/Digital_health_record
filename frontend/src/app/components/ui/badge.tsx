@@ -13,6 +13,7 @@ export function Badge({ children, variant = 'default', className = '' }: BadgePr
     warning: 'bg-yellow-900/50 text-yellow-400',
     danger: 'bg-red-900/50 text-red-400',
     info: 'bg-blue-900/50 text-blue-400',
+    ai: 'bg-purple-900/40 text-purple-200',
   };
   
   return (

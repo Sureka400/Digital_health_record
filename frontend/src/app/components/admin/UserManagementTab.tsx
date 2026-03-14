@@ -15,6 +15,8 @@ import {
   DialogFooter
 } from '@/app/components/ui/dialog';
 
+type FilterRole = 'all' | 'doctor' | 'hospital' | 'patient' | 'admin';
+
 interface UserRecord {
   id: string;
   name: string;
@@ -43,7 +45,7 @@ interface UserRecord {
 
 export function UserManagementTab() {
   const [searchQuery, setSearchQuery] = useState('');
-  const [filterRole, setFilterRole] = useState<string>('all');
+  const [filterRole, setFilterRole] = useState<FilterRole>('all');
   const [selectedUser, setSelectedUser] = useState<UserRecord | null>(null);
   const [users, setUsers] = useState<UserRecord[]>([]);
   const [loading, setLoading] = useState(true);
@@ -88,26 +90,33 @@ export function UserManagementTab() {
     loadPendingAppts();
   }, []);
 
-  const roleFilters = useMemo(() => ([
+  const normalizeRole = (role?: string) => (role ? role.toString().trim().toUpperCase() : 'PATIENT');
+
+  const roleFilters: { id: FilterRole; name: string; count: number }[] = useMemo(() => ([
     { id: 'all', name: 'All Users', count: users.length },
-    { id: 'doctor', name: 'Doctors', count: users.filter(u => u.role === 'DOCTOR' || u.role === 'doctor').length },
-    { id: 'hospital', name: 'Hospitals', count: users.filter(u => u.role === 'HOSPITAL' || u.role === 'hospital').length },
-    { id: 'patient', name: 'Patients', count: users.filter(u => u.role === 'PATIENT' || u.role === 'patient').length },
+    { id: 'doctor', name: 'Doctors', count: users.filter(u => normalizeRole(u.role) === 'DOCTOR').length },
+    { id: 'hospital', name: 'Hospitals', count: users.filter(u => normalizeRole(u.role) === 'HOSPITAL').length },
+    { id: 'patient', name: 'Patients', count: users.filter(u => normalizeRole(u.role) === 'PATIENT').length },
+    { id: 'admin', name: 'Admins', count: users.filter(u => normalizeRole(u.role) === 'ADMIN').length },
   ]), [users]);
 
-  const normalizeRole = (role?: string) => (role ? role.toUpperCase() : 'PATIENT');
-
   const filteredUsers = useMemo(() => {
-    const normalizedSearch = searchQuery.trim().toLowerCase();
-    const byRole = filterRole === 'all'
-      ? users
-      : users.filter(u => normalizeRole(u.role) === filterRole.toUpperCase());
-    if (!normalizedSearch) return byRole;
-    return byRole.filter((u) =>
-      u.name.toLowerCase().includes(normalizedSearch) ||
-      u.email.toLowerCase().includes(normalizedSearch) ||
-      (u.phone || '').toLowerCase().includes(normalizedSearch)
-    );
+    const query = searchQuery.trim().toLowerCase();
+    const targetRole = filterRole.toString().trim().toUpperCase();
+    return users.filter((u) => {
+      const matchesRole = filterRole === 'all' ? true : normalizeRole(u.role) === targetRole;
+      if (!matchesRole) return false;
+      if (!query) return true;
+      const phoneClean = (u.phone || '').replace(/\s|-/g, '').toLowerCase();
+      return (
+        u.name.toLowerCase().includes(query) ||
+        u.email.toLowerCase().includes(query) ||
+        phoneClean.includes(query.replace(/\s|-/g, '')) ||
+        (u.organization || '').toLowerCase().includes(query) ||
+        normalizeRole(u.role).includes(query.toUpperCase()) ||
+        (u.status || '').toLowerCase().includes(query)
+      );
+    });
   }, [users, filterRole, searchQuery]);
 
   const getRoleIcon = (role: string) => {
@@ -149,7 +158,7 @@ export function UserManagementTab() {
     setUsers((prev) => prev.map((u) => (u.id === updated.id ? { ...u, ...updated } : u)));
     setSelectedUser((prev) => (prev && prev.id === updated.id ? { ...prev, ...updated } : prev));
   };
-
+  
   const handleVerify = async (userId: string) => {
     setSavingUserId(userId);
     try {
@@ -217,29 +226,47 @@ export function UserManagementTab() {
         </div>
 
         {/* Search & Filter */}
-        <div className="space-y-3">
-          <Input
-            type="text"
-            placeholder="Search users by name, email, or phone..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            icon={<Search className="w-5 h-5" />}
-          />
-
-          <div className="flex gap-2 overflow-x-auto">
-            {roleFilters.map((filter) => (
-              <button
-                key={filter.id}
-                onClick={() => setFilterRole(filter.id)}
-                className={`flex-shrink-0 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                  filterRole === filter.id
-                    ? 'bg-[#0b6e4f] text-white'
-                    : 'bg-muted text-muted-foreground hover:bg-accent'
-                }`}
+        <div className="space-y-4">
+          <div className="flex gap-2">
+            <div className="flex-1 relative">
+              <Input
+                type="text"
+                placeholder="Search users by name, email, or phone..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                icon={<Search className="w-5 h-5" />}
+              />
+            </div>
+            {searchQuery && (
+              <Button
+                variant="ghost"
+                className="px-3 h-[46px]"
+                onClick={() => setSearchQuery('')}
               >
-                {filter.name} ({filter.count})
-              </button>
-            ))}
+                Clear
+              </Button>
+            )}
+          </div>
+
+          <div className="flex gap-2 overflow-x-auto pb-1">
+            {roleFilters.map((filter) => {
+              const active = filterRole === filter.id;
+              return (
+                <button
+                  key={filter.id}
+                  type="button"
+                  aria-pressed={active}
+                  onClick={() => setFilterRole(filter.id)}
+                  className={`flex-shrink-0 px-4 py-2 rounded-lg text-sm font-medium transition-all border ${
+                    active
+                      ? 'bg-[#0b6e4f] text-white border-[#0b6e4f]'
+                      : 'bg-muted text-muted-foreground hover:bg-accent border-transparent'
+                  }`}
+                >
+                  {filter.name} ({filter.count})
+                </button>
+              );
+            })}
           </div>
         </div>
       </Card>
@@ -308,8 +335,40 @@ export function UserManagementTab() {
         </Card>
       </div>
 
+      {/* Current filter + count */}
+      <Card className="p-3 flex items-center justify-between">
+        <div className="text-sm text-muted-foreground">
+          Showing <span className="font-semibold text-foreground">{filteredUsers.length}</span> of {users.length} users
+        </div>
+        <div className="text-xs text-muted-foreground capitalize">
+          Filter: {filterRole}
+          {searchQuery && ` • Search: "${searchQuery}"`}
+        </div>
+      </Card>
+
       {/* User List */}
       <div className="space-y-3">
+        {filteredUsers.length === 0 && (
+          <Card className="p-12 text-center bg-zinc-900/50 border-zinc-800">
+            <div className="w-16 h-16 bg-zinc-800 rounded-full flex items-center justify-center mx-auto mb-4">
+              <UserX className="w-8 h-8 text-zinc-500" />
+            </div>
+            <h3 className="text-xl font-bold text-foreground mb-2">No users found</h3>
+            <p className="text-muted-foreground max-w-sm mx-auto">
+              No users match "{searchQuery || 'current filter'}". Clear search or pick a different role filter.
+            </p>
+            <Button 
+              variant="outline" 
+              className="mt-6"
+              onClick={() => {
+                setSearchQuery('');
+              }}
+            >
+              Clear Search
+            </Button>
+          </Card>
+        )}
+
         {filteredUsers.map((user, index) => (
           <motion.div
             key={user.id}
@@ -560,6 +619,7 @@ function UserDetailDialog({ user, open, onOpenChange, onSave, savingId, formatDa
               >
                 <option value="PATIENT">Patient</option>
                 <option value="DOCTOR">Doctor</option>
+                <option value="HOSPITAL">Hospital</option>
                 <option value="ADMIN">Admin</option>
               </select>
             </div>
