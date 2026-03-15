@@ -527,7 +527,7 @@ export function LoginScreen({ onLogin, language }: LoginScreenProps) {
                 <div className="space-y-6">
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-sm font-medium text-[#10b981] capitalize flex items-center gap-2">
-                      Logging in as {selectedRole}
+                      {t('loggingInAs')} {t(selectedRole)}
                     </span>
                     <button
                       onClick={() => {
@@ -540,7 +540,7 @@ export function LoginScreen({ onLogin, language }: LoginScreenProps) {
                       }}
                       className="text-xs text-gray-500 hover:text-gray-300"
                     >
-                      Change Role
+                      {t('changeRole')}
                     </button>
                   </div>
 
@@ -554,7 +554,7 @@ export function LoginScreen({ onLogin, language }: LoginScreenProps) {
                       }`}
                     >
                       <Mail className="w-4 h-4 mx-auto mb-1" />
-                      Gmail
+                      {t('gmail')}
                     </button>
                     <button
                       onClick={() => setLoginMethod('qr')}
@@ -581,7 +581,7 @@ export function LoginScreen({ onLogin, language }: LoginScreenProps) {
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
                         icon={<Mail className="w-5 h-5" />}
-                        label="Gmail Address"
+                        label={t('gmailAddress')}
                         disabled={!loginPhoto}
                       />
 
@@ -592,11 +592,11 @@ export function LoginScreen({ onLogin, language }: LoginScreenProps) {
                         >
                           <Input
                             type="text"
-                            placeholder="Enter 6-digit OTP"
+                            placeholder={t('enterOtp')}
                             value={otp}
                             onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
                             icon={<Shield className="w-5 h-5" />}
-                            label="OTP"
+                            label={t('otpLabel')}
                             disabled={!loginPhoto}
                           />
                         </motion.div>
@@ -657,7 +657,7 @@ export function LoginScreen({ onLogin, language }: LoginScreenProps) {
                           disabled={isScanning || isResolving}
                           icon={isResolving ? <Loader2 className="w-5 h-5 animate-spin" /> : <Camera className="w-5 h-5" />}
                         >
-                          {isScanning ? 'Scanning...' : t('openCamera')}
+                          {isScanning ? t('scanning') : t('openCamera')}
                         </Button>
                         {isScanning && (
                           <Button
@@ -665,16 +665,16 @@ export function LoginScreen({ onLogin, language }: LoginScreenProps) {
                             size="lg"
                             onClick={stopScanning}
                           >
-                            Stop
+                            {t('stop')}
                           </Button>
                         )}
                       </div>
                       <div className="space-y-2 mt-4">
-                        <p className="text-xs text-muted-foreground">Or paste QR link / token</p>
+                        <p className="text-xs text-muted-foreground">{t('pasteQrPrompt')}</p>
                         <div className="flex gap-2">
                           <Input
                             type="text"
-                            placeholder="Paste QR value"
+                            placeholder={t('pasteQrPlaceholder')}
                             value={manualInput}
                             onChange={(e) => setManualInput(e.target.value)}
                           />
@@ -683,7 +683,7 @@ export function LoginScreen({ onLogin, language }: LoginScreenProps) {
                             onClick={handleManualResolve}
                             disabled={!manualInput.trim() || isResolving}
                           >
-                            {isResolving ? 'Reading...' : 'Use'}
+                            {isResolving ? t('reading') : t('useAction')}
                           </Button>
                         </div>
                       </div>
@@ -697,7 +697,7 @@ export function LoginScreen({ onLogin, language }: LoginScreenProps) {
                           onClick={() => handleQRLogin(selectedRole)}
                           disabled={loading}
                         >
-                          {loading ? t('authenticating') : 'Use Demo Login'}
+                          {loading ? t('authenticating') : t('useDemoLogin')}
                         </Button>
                       </div>
                     </motion.div>

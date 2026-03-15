@@ -63,7 +63,7 @@ export function EmergencyTab() {
       setIsEditing(false);
     } catch (err: any) {
       console.error('Failed to update profile:', err);
-      alert(err.message || 'Failed to update emergency details');
+      alert(err.message || t('failedToUpdateEmergencyDetails'));
     }
   };
 
@@ -75,7 +75,7 @@ export function EmergencyTab() {
     
     // Optionally send SMS if supported
     if (profile?.emergencyContact?.phone) {
-      const message = encodeURIComponent(`EMERGENCY! I need help. My location: ${window.location.href}`);
+      const message = encodeURIComponent(`${t('sosDefaultMessage')} ${t('myLocationLabel')}: ${window.location.href}`);
       // Some devices support triggering SMS automatically, but usually it requires user interaction
       // window.location.href = `sms:${profile.emergencyContact.phone}?body=${message}`;
     }
@@ -104,7 +104,7 @@ export function EmergencyTab() {
   };
 
   const handleMessage = (number: string) => {
-    const message = encodeURIComponent("EMERGENCY! I need help.");
+    const message = encodeURIComponent(t('sosDefaultMessage'));
     window.location.href = `sms:${number}?body=${message}`;
   };
 
@@ -121,20 +121,22 @@ export function EmergencyTab() {
 
   const hospitals = [
     {
-      name: 'City Medical Center',
-      distance: '0.8 km',
-      type: 'Tertiary Care',
+      nameKey: 'cityMedicalCenter',
+      distance: '0.8',
+      distanceUnitKey: 'distanceUnitKm',
+      typeKey: 'tertiaryCareType',
       open: true,
       phone: '+91 98765 43210',
-      address: 'City Medical Center, Main Road'
+      addressKey: 'cityMedicalCenterAddress'
     },
     {
-      name: 'General Hospital',
-      distance: '2.4 km',
-      type: 'Government',
+      nameKey: 'generalHospitalName',
+      distance: '2.4',
+      distanceUnitKey: 'distanceUnitKm',
+      typeKey: 'governmentHospitalType',
       open: true,
       phone: '+91 98765 43211',
-      address: 'General Hospital, Station Road'
+      addressKey: 'generalHospitalAddress'
     }
   ];
 
@@ -151,14 +153,14 @@ export function EmergencyTab() {
       setProfile(updatedProfile);
       setEditedProfile(updatedProfile);
       setIsEditing(true);
-      alert('Emergency Medical Card has been enabled. Please fill in your critical health details.');
+      alert(t('emergencyEnableSuccess'));
     } catch (err: any) {
       console.error('Failed to enable emergency access:', err);
-      alert(err.message || 'Failed to enable emergency access');
+      alert(err.message || t('emergencyEnableFailure'));
     }
   };
 
-  if (loading) return <div className="p-8 text-center">Loading emergency data...</div>;
+  if (loading) return <div className="p-8 text-center">{t('loadingEmergencyData')}</div>;
 
   return (
     <div className="space-y-6">
@@ -239,7 +241,7 @@ export function EmergencyTab() {
           <h3 className="font-bold text-red-400 flex items-center gap-2">
             <User className="w-5 h-5" />
             {t('emergencyMedicalCard')}
-            {profile?.emergency?.enabled && <Badge className="bg-green-600 text-[10px] h-4">ENABLED</Badge>}
+            {profile?.emergency?.enabled && <Badge className="bg-green-600 text-[10px] h-4">{t('enabledLabel')}</Badge>}
           </h3>
           <div className="flex gap-2">
             {!isEditing && (profile?.emergency?.enabled || showAnyway) && (
@@ -249,7 +251,7 @@ export function EmergencyTab() {
                 className="border-red-600 text-red-400 bg-red-900/20 font-bold px-6 py-2"
                 onClick={() => setIsEditing(true)}
               >
-                Re-update
+                {t('reUpdate')}
               </Button>
             )}
             {isEditing && (
@@ -259,7 +261,7 @@ export function EmergencyTab() {
                 className="bg-red-600 text-white font-bold px-6 py-2 shadow-lg border-red-700 hover:bg-red-700"
                 onClick={handleSave}
               >
-                <Save className="w-5 h-5 mr-2" /> Save
+                <Save className="w-5 h-5 mr-2" /> {t('save')}
               </Button>
             )}
           </div>
@@ -276,10 +278,10 @@ export function EmergencyTab() {
                 className="w-full bg-red-900/20 border border-red-800 rounded px-2 py-1 text-red-100 text-sm focus:outline-none focus:ring-1 focus:ring-red-500"
                 value={editedProfile?.name || ''}
                 onChange={(e) => setEditedProfile({...editedProfile, name: e.target.value})}
-                placeholder="Full Name"
+                placeholder={t('fullNamePlaceholder')}
               />
             ) : (
-              <div className="font-bold text-red-100">{profile?.name || 'Not set'}</div>
+              <div className="font-bold text-red-100">{profile?.name || t('notSet')}</div>
             )}
           </div>
           <div className="space-y-1">
@@ -292,10 +294,10 @@ export function EmergencyTab() {
                 className="w-full bg-red-900/20 border border-red-800 rounded px-2 py-1 text-red-100 text-sm focus:outline-none focus:ring-1 focus:ring-red-500"
                 value={editedProfile?.phone || ''}
                 onChange={(e) => setEditedProfile({...editedProfile, phone: e.target.value})}
-                placeholder="Phone Number"
+                placeholder={t('phoneNumberPlaceholder')}
               />
             ) : (
-              <div className="font-bold text-red-100">{profile?.phone || 'Not set'}</div>
+              <div className="font-bold text-red-100">{profile?.phone || t('notSet')}</div>
             )}
           </div>
           <div className="space-y-1">
@@ -308,10 +310,10 @@ export function EmergencyTab() {
                 className="w-full bg-red-900/20 border border-red-800 rounded px-2 py-1 text-red-100 text-sm focus:outline-none focus:ring-1 focus:ring-red-500"
                 value={editedProfile?.bloodGroup || ''}
                 onChange={(e) => setEditedProfile({...editedProfile, bloodGroup: e.target.value})}
-                placeholder="e.g. O+"
+                placeholder={t('bloodGroupPlaceholder')}
               />
             ) : (
-              <div className="font-bold text-red-100 text-xl">{profile?.bloodGroup || 'Not set'}</div>
+              <div className="font-bold text-red-100 text-xl">{profile?.bloodGroup || t('notSet')}</div>
             )}
           </div>
           <div className="space-y-1">
@@ -324,10 +326,10 @@ export function EmergencyTab() {
                 className="w-full bg-red-900/20 border border-red-800 rounded px-2 py-1 text-red-100 text-sm focus:outline-none focus:ring-1 focus:ring-red-500"
                 value={editedProfile?.allergies?.join(', ') || ''}
                 onChange={(e) => setEditedProfile({...editedProfile, allergies: e.target.value.split(',').map((s: string) => s.trim())})}
-                placeholder="e.g. Peanuts, Penicillin"
+                placeholder={t('allergiesPlaceholder')}
               />
             ) : (
-              <div className="font-bold text-red-100">{profile?.allergies?.join(', ') || 'None'}</div>
+              <div className="font-bold text-red-100">{profile?.allergies?.join(', ') || t('none')}</div>
             )}
           </div>
           <div className="space-y-1">
@@ -343,7 +345,7 @@ export function EmergencyTab() {
                 onChange={(e) => setEditedProfile({...editedProfile, dob: e.target.value})}
               />
             ) : (
-              <div className="font-bold text-red-100">{profile?.dob ? new Date(profile.dob).toLocaleDateString() : 'Not set'}</div>
+              <div className="font-bold text-red-100">{profile?.dob ? new Date(profile.dob).toLocaleDateString() : t('notSet')}</div>
             )}
           </div>
           <div className="space-y-1">
@@ -357,13 +359,13 @@ export function EmergencyTab() {
                 value={editedProfile?.gender || ''}
                 onChange={(e) => setEditedProfile({...editedProfile, gender: e.target.value})}
               >
-                <option value="">{t('chooseLanguage')}</option>
-                <option value="Male">Male</option>
-                <option value="Female">Female</option>
-                <option value="Other">Other</option>
+                <option value="">{t('selectGender')}</option>
+                <option value="Male">{t('male')}</option>
+                <option value="Female">{t('female')}</option>
+                <option value="Other">{t('otherGender')}</option>
               </select>
             ) : (
-              <div className="font-bold text-red-100">{profile?.gender || 'Not set'}</div>
+              <div className="font-bold text-red-100">{profile?.gender || t('notSet')}</div>
             )}
           </div>
         </div>
@@ -379,7 +381,7 @@ export function EmergencyTab() {
                   ...editedProfile, 
                   emergencyContact: { ...editedProfile.emergencyContact, name: e.target.value }
                 })}
-                placeholder="Name"
+                placeholder={t('emergencyContactNamePlaceholder')}
               />
               <input
                 className="w-full bg-red-900/20 border border-red-800 rounded px-2 py-1 text-red-100 text-sm"
@@ -388,7 +390,7 @@ export function EmergencyTab() {
                   ...editedProfile, 
                   emergencyContact: { ...editedProfile.emergencyContact, relation: e.target.value }
                 })}
-                placeholder="Relation (e.g. Wife)"
+                placeholder={t('relationPlaceholder')}
               />
               <input
                 className="w-full bg-red-900/20 border border-red-800 rounded px-2 py-1 text-red-100 text-sm"
@@ -397,13 +399,13 @@ export function EmergencyTab() {
                   ...editedProfile, 
                   emergencyContact: { ...editedProfile.emergencyContact, phone: e.target.value }
                 })}
-                placeholder="Phone Number"
+                placeholder={t('emergencyContactPhonePlaceholder')}
               />
             </div>
           ) : (
             <div className="flex items-center justify-between">
               <div>
-                <div className="font-bold text-red-100">{profile?.emergencyContact?.name || 'Not set'}</div>
+                <div className="font-bold text-red-100">{profile?.emergencyContact?.name || t('notSet')}</div>
                 <div className="text-xs text-red-400">{profile?.emergencyContact?.relation}</div>
               </div>
               <div className="flex gap-2">
@@ -415,7 +417,7 @@ export function EmergencyTab() {
                   disabled={!profile?.emergencyContact?.phone}
                 >
                   <Phone className="w-4 h-4 mr-2" />
-                  Call
+                  {t('callLabel')}
                 </Button>
                 <Button 
                   size="sm" 
@@ -425,7 +427,7 @@ export function EmergencyTab() {
                   disabled={!profile?.emergencyContact?.phone}
                 >
                   <MessageSquare className="w-4 h-4 mr-2" />
-                  SMS
+                  {t('smsLabel')}
                 </Button>
               </div>
             </div>
@@ -445,27 +447,27 @@ export function EmergencyTab() {
               <div className="flex-1">
                 <div className="flex items-center gap-2">
                   <h4 className="font-semibold text-foreground">{hospital.name}</h4>
-                  <Badge className="bg-green-950 text-green-400 border-green-900">OPEN</Badge>
+                  <Badge className="bg-green-950 text-green-400 border-green-900">{t('openLabel')}</Badge>
                 </div>
                 <div className="flex items-center gap-3 mt-1 text-sm text-muted-foreground">
                   <span className="flex items-center gap-1">
                     <Navigation className="w-3 h-3" />
-                    {hospital.distance}
-                  </span>
-                  <span>•</span>
-                  <span>{hospital.type}</span>
-                </div>
+                  {hospital.distance} {t(hospital.distanceUnitKey)}
+                </span>
+                <span>&bull;</span>
+                <span>{t(hospital.typeKey)}</span>
               </div>
-              <div className="flex gap-2">
-                <Button 
-                  onClick={() => handleNavigate(hospital.address)}
-                  variant="outline"
-                  className="h-10 w-10 p-0 rounded-full border-zinc-700"
-                >
+                </div>
+                <div className="flex gap-2">
+                  <Button 
+                    onClick={() => handleNavigate(t(hospital.addressKey))}
+                    variant="outline"
+                    className="h-10 w-10 p-0 rounded-full border-zinc-700"
+                  >
                   <Navigation className="w-4 h-4" />
                 </Button>
                 <Button 
-                  onClick={() => handleHospitalCall(hospital.name, hospital.phone)}
+                  onClick={() => handleHospitalCall(t(hospital.nameKey), hospital.phone)}
                   className="h-10 w-10 p-0 rounded-full bg-red-600 hover:bg-red-700"
                 >
                   <Phone className="w-4 h-4" />
@@ -477,10 +479,10 @@ export function EmergencyTab() {
             variant="outline" 
             fullWidth 
             className="border-dashed border-zinc-700 text-muted-foreground hover:text-foreground"
-            onClick={() => handleNavigate('hospitals nearby')}
+            onClick={() => handleNavigate(t('hospitalsNearbySearchQuery'))}
           >
             <MapPin className="w-4 h-4 mr-2" />
-            Find More Nearby Hospitals
+            {t('findMoreHospitals')}
           </Button>
         </div>
       </div>
@@ -491,15 +493,15 @@ export function EmergencyTab() {
         <ul className="space-y-2">
           <li className="text-sm text-amber-200/70 flex items-start gap-2">
             <span className="font-bold text-amber-500">1.</span>
-            Stay calm and check for safety
+            {t('stayCalmTip')}
           </li>
           <li className="text-sm text-amber-200/70 flex items-start gap-2">
             <span className="font-bold text-amber-500">2.</span>
-            Call emergency services immediately
+            {t('callEmergencyServicesTip')}
           </li>
           <li className="text-sm text-amber-200/70 flex items-start gap-2">
             <span className="font-bold text-amber-500">3.</span>
-            Keep the patient warm and still
+            {t('keepPatientWarmTip')}
           </li>
         </ul>
       </Card>
