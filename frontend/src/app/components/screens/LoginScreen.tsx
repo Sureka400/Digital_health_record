@@ -64,6 +64,7 @@ export function LoginScreen({ onLogin, language }: LoginScreenProps) {
   const detectorRef = useRef<any>(null);
   const scanFrameRef = useRef<number | null>(null);
   const processingRef = useRef(false);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
     return () => {
@@ -98,15 +99,15 @@ export function LoginScreen({ onLogin, language }: LoginScreenProps) {
 
   const handleSendOTP = async () => {
     if (!loginPhoto) {
-      setError('Please upload your photo first');
+      setError(t('errorUploadPhotoFirst'));
       return;
     }
     if (!selectedRole) {
-      setError('Please select a role first');
+      setError(t('errorSelectRole'));
       return;
     }
     if (!email) {
-      setError('Please enter your email address');
+      setError(t('errorEnterEmail'));
       return;
     }
 
@@ -116,7 +117,7 @@ export function LoginScreen({ onLogin, language }: LoginScreenProps) {
       await api.post('/auth/send-otp', { email, role: selectedRole.toUpperCase() });
       setOtpSent(true);
     } catch (err: any) {
-      setError(err.message || 'Failed to send OTP');
+      setError(language === 'en' ? (err.message || t('errorSendOtp')) : t('errorSendOtp'));
     } finally {
       setLoading(false);
     }
@@ -124,15 +125,15 @@ export function LoginScreen({ onLogin, language }: LoginScreenProps) {
 
   const handleEmailLogin = async (role: string) => {
     if (!loginPhoto) {
-      setError('Please upload your photo first');
+      setError(t('errorUploadPhotoFirst'));
       return;
     }
     if (!otpSent) {
-      setError('Please send OTP first');
+      setError(t('errorSendOtpFirst'));
       return;
     }
     if (otp.length !== 6) {
-      setError('OTP must be 6 digits');
+      setError(t('errorOtpLength'));
       return;
     }
 
@@ -146,7 +147,7 @@ export function LoginScreen({ onLogin, language }: LoginScreenProps) {
       if (!photoSaved) return;
       onLogin(response.role);
     } catch (err: any) {
-      setError(err.message || 'Login failed');
+      setError(language === 'en' ? (err.message || t('errorLoginFailed')) : t('errorLoginFailed'));
     } finally {
       setLoading(false);
     }
@@ -154,7 +155,7 @@ export function LoginScreen({ onLogin, language }: LoginScreenProps) {
 
   const handleQRLogin = async (role: string) => {
     if (!loginPhoto) {
-      setError('Please upload your photo first');
+      setError(t('errorUploadPhotoFirst'));
       return;
     }
     setLoading(true);
@@ -168,7 +169,7 @@ export function LoginScreen({ onLogin, language }: LoginScreenProps) {
       if (!photoSaved) return;
       onLogin(role);
     } catch (err: any) {
-      setError(err.message || 'QR sign-in failed');
+      setError(language === 'en' ? (err.message || t('errorQrSigninFailed')) : t('errorQrSigninFailed'));
     } finally {
       setLoading(false);
     }
@@ -188,11 +189,11 @@ export function LoginScreen({ onLogin, language }: LoginScreenProps) {
       await api.upload('/patients/me/photo', loginPhoto);
       return true;
     } catch (err: any) {
-      const msg = err?.message || 'Failed to save profile photo';
+      const msg = err?.message || t('errorSaveProfilePhoto');
       if (msg.toLowerCase().includes('cannot be changed once uploaded')) {
         return true;
       }
-      setError(msg);
+      setError(language === 'en' ? msg : t('errorSaveProfilePhoto'));
       return false;
     }
   };
@@ -201,7 +202,7 @@ export function LoginScreen({ onLogin, language }: LoginScreenProps) {
     const file = e.target.files?.[0];
     if (!file) return;
     if (!file.type.startsWith('image/')) {
-      setError('Please upload a valid image file');
+      setError(t('errorInvalidImage'));
       return;
     }
     setError(null);
@@ -394,15 +395,14 @@ export function LoginScreen({ onLogin, language }: LoginScreenProps) {
                 <div 
                   className="w-full aspect-square bg-zinc-900/50 border-2 border-dashed border-zinc-800 rounded-2xl flex flex-col items-center justify-center cursor-pointer hover:bg-zinc-800/50 transition-all"
                   onClick={() => {
-                    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
-                    if (input) input.click();
+                    fileInputRef.current?.click();
                   }}
                 >
                   <div className="p-6 bg-zinc-800/50 rounded-full mb-4 group-hover:scale-110 transition-transform">
                     <Camera className="w-12 h-12 text-[#10b981]" />
                   </div>
-                  <h3 className="text-xl font-bold text-white mb-2">Upload Your Image</h3>
-                  <p className="text-zinc-400 text-sm">To verify your identity and continue</p>
+                  <h3 className="text-xl font-bold text-white mb-2">{t('uploadYourImage')}</h3>
+                  <p className="text-zinc-400 text-sm">{t('verifyIdentityContinue')}</p>
                 </div>
               )}
               <div className="absolute bottom-6 left-6 right-6 bg-zinc-900/95 backdrop-blur-sm rounded-xl p-4 shadow-lg border border-zinc-800">
@@ -463,22 +463,39 @@ export function LoginScreen({ onLogin, language }: LoginScreenProps) {
               {!selectedRole ? (
                 <div className="space-y-4">
                   <div className="space-y-2">
-                    <p className="text-sm text-gray-300">Upload your photo first:</p>
-                    <Input
-                      type="file"
-                      accept="image/png,image/jpeg,image/jpg"
-                      onChange={handleLoginPhotoChange}
-                      label="Photo"
-                    />
+                    <p className="text-sm text-gray-300">{t('uploadPhotoFirst')}</p>
+                    <label className="block text-sm font-medium text-foreground mb-2">
+                      {t('photo')}
+                    </label>
+                    <div className="flex items-center gap-3">
+                      <input
+                        ref={fileInputRef}
+                        type="file"
+                        accept="image/png,image/jpeg,image/jpg"
+                        onChange={handleLoginPhotoChange}
+                        className="hidden"
+                      />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => fileInputRef.current?.click()}
+                      >
+                        {t('chooseFile')}
+                      </Button>
+                      <span className="text-sm text-gray-300">
+                        {loginPhoto?.name || t('noFileChosen')}
+                      </span>
+                    </div>
                     {loginPhotoPreview && (
                       <img
                         src={loginPhotoPreview}
-                        alt="Uploaded preview"
+                        alt={t('uploadedPreviewAlt')}
                         className="w-20 h-20 rounded-full object-cover border border-zinc-700"
                       />
                     )}
                   </div>
-                  <p className="text-sm text-gray-400 mb-2">Select your role to continue:</p>
+                  <p className="text-sm text-gray-400 mb-2">{t('selectRoleToContinue')}</p>
                   <div className="grid grid-cols-1 gap-3">
                     <Button
                       variant="outline"
