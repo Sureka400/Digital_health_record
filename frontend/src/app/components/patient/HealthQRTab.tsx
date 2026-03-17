@@ -88,7 +88,7 @@ export function HealthQRTab({ user }: { user: any }) {
             {t('yourHealthQR')}
           </h2>
           <p className="text-sm text-muted-foreground">
-            Blockchain-backed Secure Health Identity
+            {t('blockchainBackedIdentity')}
           </p>
         </div>
 
@@ -237,11 +237,11 @@ export function HealthQRTab({ user }: { user: any }) {
         <div className="space-y-2 text-sm">
           <div className="flex justify-between items-center">
             <span className="text-red-700">{t('drugAllergy')}: Penicillin</span>
-            <span className="px-2 py-1 bg-red-200 text-red-800 rounded text-xs">High</span>
+            <span className="px-2 py-1 bg-red-200 text-red-800 rounded text-xs">{t('high')}</span>
           </div>
           <div className="flex justify-between items-center">
-            <span className="text-red-700">{t('condition')}: Type 2 Diabetes</span>
-            <span className="px-2 py-1 bg-yellow-200 text-yellow-800 rounded text-xs">Monitor</span>
+            <span className="text-red-700">{t('condition')}: {t('type2Diabetes')}</span>
+            <span className="px-2 py-1 bg-yellow-200 text-yellow-800 rounded text-xs">{t('monitor')}</span>
           </div>
         </div>
       </Card>
