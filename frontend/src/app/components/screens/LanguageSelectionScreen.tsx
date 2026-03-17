@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { motion } from 'motion/react';
 import { Globe, Heart } from 'lucide-react';
 import { LanguageSelector } from '@/app/components/LanguageSelector';
@@ -7,7 +7,52 @@ interface LanguageSelectionScreenProps {
   onLanguageSelect: (language: string) => void;
 }
 
+const translations = {
+  heading: [
+    'Kerala Health Portal',
+    'കേരള ഹെൽത്ത് പോർട്ടൽ',
+    'கேரளா ஹெல்த் போர்டல்',
+    'केरला हेल्थ पोर्टल',
+    'কেরালা হেলথ পোর্টাল',
+  ],
+  title: [
+    'Choose Your Language',
+    'നിങ്ങളുടെ ഭാഷ തിരഞ്ഞെടുക്കുക',
+    'உங்கள் மொழியை தேர்வு செய்க',
+    'अपनी भाषा चुनें',
+    'আপনার ভাষা নির্বাচন করুন',
+  ],
+  subtitle: [
+    'Digital Health Records for Everyone',
+    'അവർക്കുവേണ്ടി ഡിജിറ്റൽ ആരോഗ്യ റെക്കോർഡുകൾ',
+    'அனைவருக்கும் டிஜிட்டல் சுகாதார பதிவுகள்',
+    'सभी के लिए डिजिटल स्वास्थ्य रिकॉर्ड',
+    'সবার জন্য ডিজিটাল স্বাস্থ্য রেকর্ড',
+  ],
+  footer: [
+    'Powered by Government of Kerala',
+    'കേരള സർക്കാർ നൽകുന്ന',
+    'கேராகா அரசால் வழங்கப்பட்டது',
+    'केरल सरकार द्वारा समर्थित',
+    'কেরলের সরকারের পক্ষ থেকে',
+  ],
+};
+
 export function LanguageSelectionScreen({ onLanguageSelect }: LanguageSelectionScreenProps) {
+  const [activeIndex, setActiveIndex] = useState(0);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setActiveIndex((prev) => (prev + 1) % translations.title.length);
+    }, 1200);
+    return () => clearInterval(timer);
+  }, []);
+
+  const currentHeading = translations.heading[activeIndex];
+  const currentTitle = translations.title[activeIndex];
+  const currentSubtitle = translations.subtitle[activeIndex];
+  const currentFooter = translations.footer[activeIndex];
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-black via-zinc-950 to-zinc-900 flex items-center justify-center p-4">
       <motion.div
@@ -26,13 +71,13 @@ export function LanguageSelectionScreen({ onLanguageSelect }: LanguageSelectionS
             <Heart className="w-10 h-10 text-white" />
           </motion.div>
           <h1 className="text-4xl font-bold text-white mb-2">
-            Kerala Health Portal
+            {currentHeading}
           </h1>
-          <p className="text-lg text-gray-300 mb-1">
-            Digital Health Records for Everyone
+          <p className="text-lg text-gray-300 mb-1 transition-all duration-300">
+            {currentSubtitle}
           </p>
           <p className="text-sm text-gray-400">
-            सभी के लिए डिजिटल स्वास्थ्य रिकॉर्ड
+            {currentFooter}
           </p>
         </div>
 
@@ -48,11 +93,11 @@ export function LanguageSelectionScreen({ onLanguageSelect }: LanguageSelectionS
               <Globe className="w-6 h-6 text-[#10b981]" />
             </div>
             <div>
-              <h2 className="text-2xl font-semibold text-white">
-                Choose Your Language
+              <h2 className="text-2xl font-semibold text-white transition-all duration-300">
+                {currentTitle}
               </h2>
-              <p className="text-sm text-gray-400">
-                अपनी भाषा चुनें | നിങ്ങളുടെ ഭാഷ തിരഞ്ഞെടുക്കുക
+              <p className="text-sm text-gray-300">
+                {currentSubtitle}
               </p>
             </div>
           </div>
@@ -68,7 +113,13 @@ export function LanguageSelectionScreen({ onLanguageSelect }: LanguageSelectionS
           transition={{ delay: 0.4 }}
         >
           <p>Powered by Government of Kerala</p>
-          <p className="mt-1">A Smart India Hackathon 2025 Initiative</p>
+          <div className="mt-1 flex flex-wrap justify-center gap-2 text-xs sm:text-sm">
+            {['English', 'മലയാളം', 'தமிழ்', 'हिंदी', 'বাংলা'].map((lang) => (
+              <span key={lang} className="px-2 py-1 rounded-full border border-zinc-700 bg-zinc-800/70">
+                {lang}
+              </span>
+            ))}
+          </div>
         </motion.div>
       </motion.div>
     </div>
