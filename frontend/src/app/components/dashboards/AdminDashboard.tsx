@@ -98,8 +98,8 @@ export function AdminDashboard({ user, onLogout, language = 'en' }: AdminDashboa
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3 }}
         >
-          {activeTab === 'analytics' && <AnalyticsTab />}
-          {activeTab === 'users' && <UserManagementTab />}
+          {activeTab === 'analytics' && <AnalyticsTab language={language} />}
+          {activeTab === 'users' && <UserManagementTab language={language} />}
           {activeTab === 'policy' && <PolicyInsightsTab />}
           {activeTab === 'monitoring' && <SystemMonitoringTab />}
         </motion.div>

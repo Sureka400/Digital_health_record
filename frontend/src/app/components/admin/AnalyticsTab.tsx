@@ -5,6 +5,7 @@ import { Card } from '@/app/components/ui/card';
 import { StatCard } from '@/app/components/StatCard';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell } from 'recharts';
 import { api } from '@/app/utils/api';
+import { useTranslation } from '@/app/utils/translations';
 
 type AnalyticsResponse = {
   summary: {
@@ -39,7 +40,12 @@ function formatMonth(key: string) {
   return date.toLocaleString('en', { month: 'short' });
 }
 
-export function AnalyticsTab() {
+interface AnalyticsTabProps {
+  language?: string;
+}
+
+export function AnalyticsTab({ language = 'en' }: AnalyticsTabProps) {
+  const { t } = useTranslation(language);
   const [data, setData] = useState<AnalyticsResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -69,31 +75,31 @@ export function AnalyticsTab() {
     return [
       {
         icon: <Users className="w-6 h-6" />,
-        label: 'Registered Patients',
+        label: t('registeredPatients'),
         value: formatNumber(summary?.totalPatients),
         color: '#0b6e4f',
-        trend: `${formatNumber(summary?.patientsWithRecords)} with records`,
+        trend: `${formatNumber(summary?.patientsWithRecords)} ${t('withRecords')}`,
       },
       {
         icon: <Activity className="w-6 h-6" />,
-        label: 'Health Records',
+        label: t('healthRecords'),
         value: formatNumber(summary?.totalRecords),
         color: '#2196F3',
-        trend: `${formatNumber(totalUploads)} uploads`,
+        trend: `${formatNumber(totalUploads)} ${t('uploads')}`,
       },
       {
         icon: <FileText className="w-6 h-6" />,
-        label: 'Hospitals Uploading',
+        label: t('hospitalsUploading'),
         value: formatNumber(summary?.uniqueHospitals),
         color: '#ff9800',
-        trend: `${formatNumber(summary?.consentsGranted)} active consents`,
+        trend: `${formatNumber(summary?.consentsGranted)} ${t('activeConsents')}`,
       },
       {
         icon: <BarChart3 className="w-6 h-6" />,
-        label: 'Clinicians',
+        label: t('clinicians'),
         value: formatNumber(clinicianCount),
         color: '#9c27b0',
-        trend: `${formatNumber(summary?.totalDoctors)} doctors`,
+        trend: `${formatNumber(summary?.totalDoctors)} ${t('doctors')}`,
       },
     ];
   }, [data]);
@@ -151,9 +157,9 @@ export function AnalyticsTab() {
     <div className="space-y-6">
       {/* Header */}
       <Card>
-        <h2 className="text-2xl font-bold text-foreground mb-2">Live Health Analytics</h2>
+        <h2 className="text-2xl font-bold text-foreground mb-2">{t('liveHealthAnalytics')}</h2>
         <p className="text-sm text-muted-foreground">
-          Built directly from patient and doctor uploads, deduplicated at the record level.
+          {t('analyticsDescription')}
         </p>
       </Card>
 
@@ -181,7 +187,7 @@ export function AnalyticsTab() {
       <Card>
         <h3 className="font-semibold text-foreground mb-4 flex items-center gap-2">
           <TrendingUp className="w-5 h-5 text-[#0b6e4f]" />
-          Uploads from Patients vs Doctors
+          {t('uploadsFromPatientsVsDoctors')}
         </h3>
         <div className="h-80">
           <ResponsiveContainer width="100%" height="100%">
@@ -190,8 +196,8 @@ export function AnalyticsTab() {
               <XAxis dataKey="month" />
               <YAxis allowDecimals={false} />
               <Tooltip />
-              <Line type="monotone" dataKey="patientUploads" stroke="#0b6e4f" strokeWidth={2} name="Patient uploads" />
-              <Line type="monotone" dataKey="doctorUploads" stroke="#2196F3" strokeWidth={2} name="Doctor uploads" />
+                <Line type="monotone" dataKey="patientUploads" stroke="#0b6e4f" strokeWidth={2} name={t('patientUploads')} />
+              <Line type="monotone" dataKey="doctorUploads" stroke="#2196F3" strokeWidth={2} name={t('doctorUploads')} />
             </LineChart>
           </ResponsiveContainer>
         </div>
@@ -202,7 +208,7 @@ export function AnalyticsTab() {
         <Card>
           <h3 className="font-semibold text-foreground mb-4 flex items-center gap-2">
             <Activity className="w-5 h-5 text-red-600" />
-            Records by Category
+            {t('recordsByCategory')}
           </h3>
           <div className="h-80">
             <ResponsiveContainer width="100%" height="100%">
@@ -220,7 +226,7 @@ export function AnalyticsTab() {
         <Card>
           <h3 className="font-semibold text-foreground mb-4 flex items-center gap-2">
             <MapPin className="w-5 h-5 text-purple-600" />
-            Top Uploading Hospitals
+            {t('topUploadingHospitals')}
           </h3>
           <div className="h-80">
             <ResponsiveContainer width="100%" height="100%">
@@ -250,10 +256,10 @@ export function AnalyticsTab() {
         <div className="flex items-center justify-between mb-3">
           <h3 className="font-semibold text-foreground flex items-center gap-2">
             <FileText className="w-5 h-5 text-[#0b6e4f]" />
-            Latest Uploads
+            {t('latestUploads')}
           </h3>
           <p className="text-xs text-muted-foreground">
-            Reflects patient and doctor submissions without duplicates.
+            {t('latestUploadsDescription')}
           </p>
         </div>
         <div className="divide-y divide-zinc-800">
@@ -262,11 +268,11 @@ export function AnalyticsTab() {
               <div>
                 <p className="font-medium text-sm text-foreground">{upload.title || 'Untitled record'}</p>
                 <p className="text-xs text-muted-foreground">
-                  {(upload.category || 'Uncategorized').toUpperCase()} - {upload.hospital || 'Unknown hospital'}
-                </p>
+                {(upload.category || t('uncategorized')).toUpperCase()} - {upload.hospital || t('unknownHospital')}
+              </p>
               </div>
               <div className="text-xs text-muted-foreground text-right">
-                <p>{upload.createdByRole || 'PATIENT'}</p>
+                <p>{upload.createdByRole || t('patient').toUpperCase()}</p>
                 <p>{new Date(upload.createdAt).toLocaleDateString('en-IN')}</p>
               </div>
             </div>
@@ -283,25 +289,25 @@ export function AnalyticsTab() {
           <p className="text-3xl font-bold text-[#0b6e4f]">
             {formatNumber(data?.summary?.patientsWithRecords)}
           </p>
-          <p className="text-sm text-muted-foreground">Patients with records</p>
+          <p className="text-sm text-muted-foreground">{t('patientsWithRecords')}</p>
         </Card>
         <Card hover className="text-center">
           <p className="text-3xl font-bold text-[#2196F3]">
             {formatNumber(data?.uploadsByRole?.doctor)}
           </p>
-          <p className="text-sm text-muted-foreground">Doctor uploads</p>
+          <p className="text-sm text-muted-foreground">{t('doctorUploads')}</p>
         </Card>
         <Card hover className="text-center">
           <p className="text-3xl font-bold text-[#ff9800]">
             {formatNumber(data?.uploadsByRole?.patient)}
           </p>
-          <p className="text-sm text-muted-foreground">Patient uploads</p>
+          <p className="text-sm text-muted-foreground">{t('patientUploads')}</p>
         </Card>
         <Card hover className="text-center">
           <p className="text-3xl font-bold text-[#4caf50]">
             {formatNumber(data?.summary?.consentsGranted)}
           </p>
-          <p className="text-sm text-muted-foreground">Active consents</p>
+          <p className="text-sm text-muted-foreground">{t('activeConsents')}</p>
         </Card>
       </div>
     </div>

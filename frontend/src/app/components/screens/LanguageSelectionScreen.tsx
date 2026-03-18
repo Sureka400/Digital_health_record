@@ -32,9 +32,23 @@ const translations = {
   footer: [
     'Powered by Government of Kerala',
     'കേരള സർക്കാർ നൽകുന്ന',
-    'கேராகா அரசால் வழங்கப்பட்டது',
+    'கேரள அரசு வழங்குகிறது',
     'केरल सरकार द्वारा समर्थित',
-    'কেরলের সরকারের পক্ষ থেকে',
+    'কেরল সরকার দ্বারা সমর্থিত',
+  ],
+  languageTagline: [
+    'Available in 5 Languages',
+    '5 ഭാഷകളിൽ ലഭ്യമാണ്',
+    '5 மொழிகளில் கிடைக்கிறது',
+    '5 भाषाओं में उपलब्ध',
+    '5 ভাষায় উপলব্ধ',
+  ],
+  languageNames: [
+    ['English', 'Malayalam', 'Tamil', 'Hindi', 'Bengali'],
+    ['ഇംഗ്ലീഷ്', 'മലയാളം', 'தமிழ்', 'हिंदी', 'বাংলা'],
+    ['இங்கிலீஷ்', 'மொழி', 'தமிழ்', 'हिंदी', 'বাংলা'],
+    ['अंग्रेज़ी', 'मलयालम', 'तमिल', 'हिंदी', 'बंगाली'],
+    ['ইংরেজি', 'মালয়ালম', 'তামিল', 'হিন্দি', 'বাংলা'],
   ],
 };
 
@@ -52,6 +66,7 @@ export function LanguageSelectionScreen({ onLanguageSelect }: LanguageSelectionS
   const currentTitle = translations.title[activeIndex];
   const currentSubtitle = translations.subtitle[activeIndex];
   const currentFooter = translations.footer[activeIndex];
+  const currentLanguageTagline = translations.languageTagline[activeIndex];
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-black via-zinc-950 to-zinc-900 flex items-center justify-center p-4">
@@ -112,11 +127,12 @@ export function LanguageSelectionScreen({ onLanguageSelect }: LanguageSelectionS
           animate={{ opacity: 1 }}
           transition={{ delay: 0.4 }}
         >
-          <p>Powered by Government of Kerala</p>
+          <p>{currentFooter}</p>
+          <p className="text-xs text-gray-300 mt-1">{currentLanguageTagline}</p>
           <div className="mt-1 flex flex-wrap justify-center gap-2 text-xs sm:text-sm">
-            {['English', 'മലയാളം', 'தமிழ்', 'हिंदी', 'বাংলা'].map((lang) => (
-              <span key={lang} className="px-2 py-1 rounded-full border border-zinc-700 bg-zinc-800/70">
-                {lang}
+            {translations.languageNames[activeIndex].map((langLabel) => (
+              <span key={langLabel} className="px-2 py-1 rounded-full border border-zinc-700 bg-zinc-800/70">
+                {langLabel}
               </span>
             ))}
           </div>
