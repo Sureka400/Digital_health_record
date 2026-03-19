@@ -6,6 +6,7 @@ import { Button } from '@/app/components/ui/button';
 import { Input } from '@/app/components/ui/input';
 import { Badge } from '@/app/components/ui/badge';
 import { api } from '@/app/utils/api';
+import { useTranslation } from '@/app/utils/translations';
 import {
   Dialog,
   DialogContent,
@@ -43,7 +44,12 @@ interface UserRecord {
   };
 }
 
-export function UserManagementTab() {
+interface UserManagementTabProps {
+  language?: string;
+}
+
+export function UserManagementTab({ language = 'en' }: UserManagementTabProps) {
+  const { t } = useTranslation(language);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterRole, setFilterRole] = useState<FilterRole>('all');
   const [selectedUser, setSelectedUser] = useState<UserRecord | null>(null);
@@ -69,7 +75,7 @@ export function UserManagementTab() {
       const res = await api.get(`/admin/users?${params.toString()}`);
       setUsers((res as any).users || []);
     } catch (err: any) {
-      setError(err?.message || 'Failed to load users');
+      setError(err?.message || t('failedToLoadUsers'));
     } finally {
       setLoading(false);
     }
@@ -83,7 +89,7 @@ export function UserManagementTab() {
   }, [searchQuery, filterRole, fetchUsers]);
 
   const handleDeleteUser = async (userId: string) => {
-    if (!window.confirm('Are you sure you want to delete this user and all their records? This cannot be undone.')) return;
+    if (!window.confirm(t('confirmDeleteUser'))) return;
     
     setSavingUserId(userId);
     try {
@@ -91,7 +97,7 @@ export function UserManagementTab() {
       setUsers((prev) => prev.filter((u) => u.id !== userId));
       if (selectedUser?.id === userId) setSelectedUser(null);
     } catch (err: any) {
-      alert(err?.message || 'Failed to delete user');
+      alert(err?.message || t('failedToDeleteUser'));
     } finally {
       setSavingUserId(null);
     }
@@ -115,12 +121,12 @@ export function UserManagementTab() {
   const normalizeRole = (role?: string) => (role ? role.toString().trim().toUpperCase() : 'PATIENT');
 
   const roleFilters: { id: FilterRole; name: string; count: number }[] = useMemo(() => ([
-    { id: 'all', name: 'All Users', count: users.length },
-    { id: 'doctor', name: 'Doctors', count: users.filter(u => normalizeRole(u.role) === 'DOCTOR').length },
-    { id: 'hospital', name: 'Hospitals', count: users.filter(u => normalizeRole(u.role) === 'HOSPITAL').length },
-    { id: 'patient', name: 'Patients', count: users.filter(u => normalizeRole(u.role) === 'PATIENT').length },
-    { id: 'admin', name: 'Admins', count: users.filter(u => normalizeRole(u.role) === 'ADMIN').length },
-  ]), [users]);
+    { id: 'all', name: t('allUsers'), count: users.length },
+    { id: 'doctor', name: t('doctorCount', { count: users.filter(u => normalizeRole(u.role) === 'DOCTOR').length }), count: users.filter(u => normalizeRole(u.role) === 'DOCTOR').length },
+    { id: 'hospital', name: t('hospitalCount', { count: users.filter(u => normalizeRole(u.role) === 'HOSPITAL').length }), count: users.filter(u => normalizeRole(u.role) === 'HOSPITAL').length },
+    { id: 'patient', name: t('patientCount', { count: users.filter(u => normalizeRole(u.role) === 'PATIENT').length }), count: users.filter(u => normalizeRole(u.role) === 'PATIENT').length },
+    { id: 'admin', name: t('adminCount', { count: users.filter(u => normalizeRole(u.role) === 'ADMIN').length }), count: users.filter(u => normalizeRole(u.role) === 'ADMIN').length },
+  ]), [users, t]);
 
   const filteredUsers = useMemo(() => {
     const query = searchQuery.trim().toLowerCase();
@@ -190,7 +196,7 @@ export function UserManagementTab() {
         updateUserInList((res as any).user);
       }
     } catch (err: any) {
-      alert(err?.message || 'Failed to verify user');
+      alert(err?.message || t('failedToVerifyUser'));
     } finally {
       setSavingUserId(null);
     }
@@ -238,13 +244,13 @@ export function UserManagementTab() {
       <Card>
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h2 className="text-2xl font-bold text-foreground">User Management</h2>
+            <h2 className="text-2xl font-bold text-foreground">{t('userManagement')}</h2>
             <p className="text-sm text-muted-foreground">
-              Manage doctors, hospitals, and patient accounts
+              {t('manageUsersDesc')}
             </p>
           </div>
           <Button variant="primary" icon={<UserCheck className="w-4 h-4" />} onClick={fetchUsers} disabled={loading}>
-            Refresh
+            {t('refresh')}
           </Button>
         </div>
 
@@ -254,7 +260,7 @@ export function UserManagementTab() {
             <div className="flex-1 relative">
               <Input
                 type="text"
-                placeholder="Search users by name, email, or phone..."
+                placeholder={t('searchUsersPlaceholder')}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 icon={<Search className="w-5 h-5" />}
@@ -297,12 +303,12 @@ export function UserManagementTab() {
       {/* Loading / error */}
       {loading && (
         <Card className="p-4 text-sm text-muted-foreground">
-          Loading users...
+          {t('loadingUsers')}
         </Card>
       )}
       {error && (
         <Card className="p-4 text-sm text-red-500 border-red-200 bg-red-50">
-          {error}
+          {t('failedToLoadUsers')}
         </Card>
       )}
       {!loading && !error && (
@@ -311,17 +317,17 @@ export function UserManagementTab() {
             <Shield className="w-6 h-6 text-yellow-600" />
             <div>
               <h3 className="font-semibold text-foreground mb-1">
-                Pending Appointments ({pendingAppointments.length || 0})
+                {t('pendingAppointments')} ({pendingAppointments.length || 0})
               </h3>
               <p className="text-sm text-muted-foreground">
-                Upcoming appointments waiting for review
+                {t('upcomingAppointmentsReview')}
               </p>
             </div>
           </div>
           {loadingPendingAppts ? (
-            <p className="text-sm text-muted-foreground">Loading pending appointments...</p>
+            <p className="text-sm text-muted-foreground">{t('loadingPendingAppointments')}</p>
           ) : pendingAppointments.length === 0 ? (
-            <p className="text-sm text-muted-foreground">No pending appointments.</p>
+            <p className="text-sm text-muted-foreground">{t('noPendingAppointments')}</p>
           ) : (
             <div className="space-y-2">
               {pendingAppointments.slice(0, 4).map((appt) => (
@@ -342,30 +348,30 @@ export function UserManagementTab() {
       <div className="grid grid-cols-4 gap-3">
         <Card hover className="text-center">
           <p className="text-2xl font-bold text-[#0b6e4f]">{users.filter(u => u.status === 'active').length}</p>
-          <p className="text-sm text-muted-foreground">Active Users</p>
+          <p className="text-sm text-muted-foreground">{t('activeUsers')}</p>
         </Card>
         <Card hover className="text-center">
           <p className="text-2xl font-bold text-yellow-600">{users.filter(u => u.status === 'pending').length}</p>
-          <p className="text-sm text-muted-foreground">Pending</p>
+          <p className="text-sm text-muted-foreground">{t('pending')}</p>
         </Card>
         <Card hover className="text-center">
           <p className="text-2xl font-bold text-red-600">{users.filter(u => u.status === 'suspended').length}</p>
-          <p className="text-sm text-muted-foreground">Suspended</p>
+          <p className="text-sm text-muted-foreground">{t('suspended')}</p>
         </Card>
         <Card hover className="text-center">
           <p className="text-2xl font-bold text-[#2196F3]">{users.filter(u => u.verified).length}</p>
-          <p className="text-sm text-muted-foreground">Verified</p>
+          <p className="text-sm text-muted-foreground">{t('verified')}</p>
         </Card>
       </div>
 
       {/* Current filter + count */}
       <Card className="p-3 flex items-center justify-between">
         <div className="text-sm text-muted-foreground">
-          Showing <span className="font-semibold text-foreground">{filteredUsers.length}</span> of {users.length} users
+          {t('showingUsers', { current: filteredUsers.length, total: users.length })}
         </div>
         <div className="text-xs text-muted-foreground capitalize">
-          Filter: {filterRole}
-          {searchQuery && ` • Search: "${searchQuery}"`}
+          {t('filterLabel', { filter: t(filterRole) })}
+          {searchQuery && ` • ${t('searchLabel')}: "${searchQuery}"`}
         </div>
       </Card>
 
@@ -376,9 +382,9 @@ export function UserManagementTab() {
             <div className="w-16 h-16 bg-zinc-800 rounded-full flex items-center justify-center mx-auto mb-4">
               <UserX className="w-8 h-8 text-zinc-500" />
             </div>
-            <h3 className="text-xl font-bold text-foreground mb-2">No users found</h3>
+            <h3 className="text-xl font-bold text-foreground mb-2">{t('noUsersFound')}</h3>
             <p className="text-muted-foreground max-w-sm mx-auto">
-              No users match "{searchQuery || 'current filter'}". Clear search or pick a different role filter.
+              {t('noUsersMatch', { query: searchQuery || t('currentFilter') })}
             </p>
             <Button 
               variant="outline" 
@@ -387,7 +393,7 @@ export function UserManagementTab() {
                 setSearchQuery('');
               }}
             >
-              Clear Search
+              {t('clearSearch')}
             </Button>
           </Card>
         )}
@@ -459,13 +465,13 @@ export function UserManagementTab() {
                     size="sm"
                     onClick={() => setSelectedUser(user)}
                   >
-                    View
+                    {t('view')}
                   </Button>
                   <Button variant="ghost" size="sm" disabled={savingUserId === user.id} onClick={() => handleToggleStatus(user)}>
-                    {user.status === 'suspended' ? 'Activate' : 'Suspend'}
+                    {user.status === 'suspended' ? t('activate') : t('suspend')}
                   </Button>
                   <Button variant="ghost" size="sm" className="text-red-500 hover:text-red-600 hover:bg-red-50" disabled={savingUserId === user.id} onClick={() => handleDeleteUser(user.id)}>
-                    Delete
+                    {t('delete')}
                   </Button>
                 </div>
               </div>

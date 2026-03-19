@@ -128,7 +128,7 @@ export function AnalyticsTab({ language = 'en' }: AnalyticsTabProps) {
     return (
       <Card className="flex items-center gap-3 p-6">
         <Loader2 className="w-5 h-5 animate-spin text-[#0b6e4f]" />
-        <span className="text-sm text-muted-foreground">Loading analytics...</span>
+        <span className="text-sm text-muted-foreground">{t('loadingAnalytics')}</span>
       </Card>
     );
   }
@@ -139,7 +139,7 @@ export function AnalyticsTab({ language = 'en' }: AnalyticsTabProps) {
         <div className="flex items-start gap-3">
           <AlertCircle className="w-5 h-5 text-red-400 mt-0.5" />
           <div className="flex-1">
-            <p className="font-semibold text-red-200 mb-1">Analytics failed to load</p>
+            <p className="font-semibold text-red-200 mb-1">{t('analyticsLoadFailed')}</p>
             <p className="text-sm text-red-300/80">{error}</p>
             <button
               onClick={loadAnalytics}
@@ -278,7 +278,7 @@ export function AnalyticsTab({ language = 'en' }: AnalyticsTabProps) {
             </div>
           ))}
           {(data?.latestUploads?.length || 0) === 0 && (
-            <p className="text-sm text-muted-foreground">No uploads yet.</p>
+            <p className="text-sm text-muted-foreground">{t('noUploadsYet')}</p>
           )}
         </div>
       </Card>
