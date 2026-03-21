@@ -1,4 +1,5 @@
-require('dotenv').config();
+const path = require('path');
+require('dotenv').config({ path: path.resolve(__dirname, '../.env') });
 const express = require('express');
 const helmet = require('helmet');
 const morgan = require('morgan');
@@ -13,8 +14,6 @@ const aiRoutes = require('./routes/ai');
 const analyticsRoutes = require('./routes/analytics');
 const adminRoutes = require('./routes/admin');
 const { errorHandler } = require('./middlewares/errorHandler');
-
-const path = require('path');
 const fs = require('fs');
 const http = require('http');
 const https = require('https');

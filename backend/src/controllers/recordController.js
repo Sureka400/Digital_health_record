@@ -72,10 +72,13 @@ async function translateText(text, languageName) {
   }
 }
 
-const openai = new OpenAI({
-  apiKey: process.env.AI_API_KEY,
-  baseURL: process.env.AI_BASE_URL || 'https://api.groq.com/openai/v1',
-});
+const openai =
+  process.env.AI_API_KEY && process.env.AI_API_KEY !== 'replace_with_your_api_key'
+    ? new OpenAI({
+        apiKey: process.env.AI_API_KEY,
+        baseURL: process.env.AI_BASE_URL || 'https://api.groq.com/openai/v1',
+      })
+    : null;
 
 function escapeRegex(value = '') {
   return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');

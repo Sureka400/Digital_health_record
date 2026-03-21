@@ -16,6 +16,8 @@ const httpsOptions =
       }
     : undefined
 
+const backendTarget = process.env.BACKEND_URL || 'http://localhost:4001'
+
 export default defineConfig({
   plugins: [
     // The React and Tailwind plugins are both required for Make, even if
@@ -27,6 +29,18 @@ export default defineConfig({
     host: true,
     port: 5173,
     https: httpsOptions,
+    proxy: {
+      '/api': {
+        target: backendTarget,
+        changeOrigin: true,
+        secure: false,
+      },
+      '/uploads': {
+        target: backendTarget,
+        changeOrigin: true,
+        secure: false,
+      },
+    },
   },
   resolve: {
     alias: {

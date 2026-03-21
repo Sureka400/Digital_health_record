@@ -1,12 +1,58 @@
-const APP_ORIGIN = (import.meta.env.VITE_PUBLIC_URL as string) || window.location.origin;
+const LOCAL_HOSTS = new Set(['localhost', '127.0.0.1']);
 
-const API_URL = (import.meta.env.VITE_API_URL as string) ||
-  (() => {
-    const host = window.location.hostname;
-    const protocol = window.location.protocol === 'https:' ? 'https:' : 'http:';
-    const apiHost = host === 'localhost' || host === '127.0.0.1' ? 'localhost' : host;
-    return `${protocol}//${apiHost}:4000/api`;
-  })();
+function parseUrl(value?: string) {
+  if (!value) return null;
+  try {
+    return new URL(value);
+  } catch {
+    return null;
+  }
+}
+
+function resolveAppOrigin() {
+  if (typeof window !== 'undefined') {
+    return window.location.origin;
+  }
+
+  return (import.meta.env.VITE_PUBLIC_URL as string) || 'http://localhost:5173';
+}
+
+function resolveApiUrl() {
+  const rawEnvApiUrl = (import.meta.env.VITE_API_URL as string | undefined)?.trim();
+  if (rawEnvApiUrl?.startsWith('/')) {
+    return rawEnvApiUrl.replace(/\/$/, '');
+  }
+
+  const envApiUrl = parseUrl(rawEnvApiUrl);
+
+  if (typeof window === 'undefined') {
+    return envApiUrl?.toString().replace(/\/$/, '') || 'http://localhost:4001/api';
+  }
+
+  const currentHost = window.location.hostname;
+  const currentProtocol = window.location.protocol === 'https:' ? 'https:' : 'http:';
+  const normalizedCurrentHost = LOCAL_HOSTS.has(currentHost) ? 'localhost' : currentHost;
+
+  if (!envApiUrl) {
+    return `${currentProtocol}//${normalizedCurrentHost}:4001/api`;
+  }
+
+  const envHost = envApiUrl.hostname;
+  const envPort = envApiUrl.port || '4001';
+  const envPath = envApiUrl.pathname || '/api';
+  const envIsLocal = LOCAL_HOSTS.has(envHost);
+  const currentIsLocal = LOCAL_HOSTS.has(currentHost);
+  const shouldSwapToCurrentHost =
+    !envIsLocal && !currentIsLocal && envHost !== currentHost;
+  const resolvedHost = shouldSwapToCurrentHost ? normalizedCurrentHost : envHost;
+  const resolvedProtocol =
+    currentProtocol === 'https:' ? 'https:' : (envApiUrl.protocol || 'http:');
+
+  return `${resolvedProtocol}//${resolvedHost}:${envPort}${envPath}`.replace(/\/$/, '');
+}
+
+const APP_ORIGIN = resolveAppOrigin();
+const API_URL = resolveApiUrl();
 
 export const getAppOrigin = () => APP_ORIGIN;
 

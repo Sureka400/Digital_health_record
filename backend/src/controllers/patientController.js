@@ -6,6 +6,13 @@ const crypto = require('crypto');
 const QRCode = require('qrcode');
 const { signToken, verifyToken } = require('../utils/jwt');
 
+function resolveFrontendUrl(req) {
+  const origin = req.get('origin');
+  if (origin) return origin;
+
+  return process.env.FRONTEND_URL || 'http://localhost:5173';
+}
+
 // Get current user's profile
 exports.getMe = async (req, res, next) => {
   try {
@@ -162,11 +169,8 @@ exports.getQRCode = async (req, res, next) => {
     const user = await Patient.findById(req.user.id);
     if (!user) return res.status(404).json({ error: 'Not found' });
 
-    // The QR code should point to a public profile URL
-    // We'll use the blockchainId as a unique identifier
-    // Use FRONTEND_URL from env or try to derive it from Origin header
-    const origin = req.get('origin');
-    const frontendUrl = process.env.FRONTEND_URL || origin || 'http://localhost:5173';
+    // The QR code should point to the currently active frontend origin when possible.
+    const frontendUrl = resolveFrontendUrl(req);
     // Use query-string URL so it works even when direct path routing is not configured.
     const publicUrl = `${frontendUrl}/?publicProfile=${encodeURIComponent(user.blockchainId)}`;
     const qrCodeDataUrl = await QRCode.toDataURL(publicUrl);
@@ -189,8 +193,7 @@ exports.getPublicProfile = async (req, res, next) => {
     const appointments = await Appointment.find({ patient: patient._id }).sort({ date: -1 });
 
     // Generate QR code for the public profile URL
-    const origin = req.get('origin') || 'http://localhost:5173';
-    const frontendUrl = process.env.FRONTEND_URL || origin;
+    const frontendUrl = resolveFrontendUrl(req);
     const publicUrl = `${frontendUrl}/?publicProfile=${encodeURIComponent(blockchainId)}`;
     const qrCodeDataUrl = await QRCode.toDataURL(publicUrl);
 
