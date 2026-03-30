@@ -21,6 +21,7 @@ import {
 import { Button } from '@/app/components/ui/button';
 import { Input } from '@/app/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/app/components/ui/select';
+import jsQR from 'jsqr';
 
 interface PatientDashboardProps {
   onLogout: () => void;
@@ -231,43 +232,101 @@ export function PatientDashboard({ onLogout, language, user: initialUser }: Pati
       return;
     }
 
-    if (!(window as any).BarcodeDetector) {
-      setScanError('Camera QR scan is not supported in this browser. Paste QR link/token below.');
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      setScanError('Your browser does not support camera access. Please use a modern browser.');
       return;
     }
 
     try {
+      // First, set scanning to true to render the video element
+      setIsScanning(true);
+      
+      // Wait for React to render the video element
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      // Now get the camera stream
       const stream = await navigator.mediaDevices.getUserMedia({
         video: { facingMode: { ideal: 'environment' } },
         audio: false,
       });
       streamRef.current = stream;
-      setIsScanning(true);
 
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-        await videoRef.current.play();
+      if (!videoRef.current) {
+        setScanError('Video element not found. Please try again.');
+        stopScanning();
+        return;
       }
 
-      detectorRef.current = new (window as any).BarcodeDetector({ formats: ['qr_code'] });
+      videoRef.current.srcObject = stream;
+      
+      // Wait for video metadata to be loaded
+      await new Promise((resolve) => {
+        const onLoadedMetadata = () => {
+          videoRef.current?.removeEventListener('loadedmetadata', onLoadedMetadata);
+          resolve(null);
+        };
+        videoRef.current?.addEventListener('loadedmetadata', onLoadedMetadata);
+        
+        // Timeout after 3 seconds
+        setTimeout(resolve, 3000);
+      });
+
+      // Try native BarcodeDetector first, then fall back to jsQR
+      let useNativeDetector = false;
+      if ((window as any).BarcodeDetector) {
+        try {
+          detectorRef.current = new (window as any).BarcodeDetector({ formats: ['qr_code'] });
+          useNativeDetector = true;
+        } catch {
+          useNativeDetector = false;
+        }
+      }
 
       const scanFrame = async () => {
-        if (!videoRef.current || !detectorRef.current || processingScanRef.current) {
+        if (!videoRef.current || processingScanRef.current) {
           scanFrameRef.current = requestAnimationFrame(scanFrame);
           return;
         }
 
         try {
-          const barcodes = await detectorRef.current.detect(videoRef.current);
-          if (barcodes && barcodes.length > 0) {
-            const rawValue = barcodes[0]?.rawValue;
-            if (rawValue) {
-              await resolveAndNavigate(rawValue);
-              return;
+          if (useNativeDetector && detectorRef.current) {
+            // Use native BarcodeDetector
+            const barcodes = await detectorRef.current.detect(videoRef.current);
+            if (barcodes && barcodes.length > 0) {
+              const rawValue = barcodes[0]?.rawValue;
+              if (rawValue) {
+                await resolveAndNavigate(rawValue);
+                return;
+              }
+            }
+          } else {
+            // Fall back to jsQR
+            const canvas = document.createElement('canvas');
+            const context = canvas.getContext('2d');
+            if (!context) {
+              throw new Error('Failed to get canvas context');
+            }
+
+            canvas.width = videoRef.current.videoWidth;
+            canvas.height = videoRef.current.videoHeight;
+            
+            // Only process if video has valid dimensions
+            if (canvas.width > 0 && canvas.height > 0) {
+              context.drawImage(videoRef.current, 0, 0, canvas.width, canvas.height);
+              const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
+              const code = jsQR(imageData.data, canvas.width, canvas.height);
+
+              if (code) {
+                await resolveAndNavigate(code.data);
+                return;
+              }
             }
           }
-        } catch {
-          // Continue scanning.
+        } catch (err) {
+          // Continue scanning
+          if (err instanceof Error && err.message.includes('canvas context')) {
+            console.error('Canvas error during QR scan:', err);
+          }
         }
 
         scanFrameRef.current = requestAnimationFrame(scanFrame);
@@ -276,7 +335,14 @@ export function PatientDashboard({ onLogout, language, user: initialUser }: Pati
       scanFrameRef.current = requestAnimationFrame(scanFrame);
     } catch (err: any) {
       stopScanning();
-      setScanError(err?.message || 'Unable to access camera');
+      const errorMsg = err?.message || 'Unable to access camera';
+      if (errorMsg.includes('NotFoundError') || errorMsg.includes('NotAllowedError')) {
+        setScanError('Camera permission denied. Please allow camera access in your browser settings.');
+      } else if (errorMsg.includes('NotSupportedError')) {
+        setScanError('Camera is not supported on this device.');
+      } else {
+        setScanError(errorMsg);
+      }
     }
   };
 
@@ -565,6 +631,7 @@ export function PatientDashboard({ onLogout, language, user: initialUser }: Pati
                 <video
                   ref={videoRef}
                   className="w-full h-full object-cover"
+                  autoPlay
                   muted
                   playsInline
                 />
